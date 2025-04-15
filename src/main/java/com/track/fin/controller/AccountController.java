@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 public class AccountController {
+
     private final AccountService accountService;
 
     @PostMapping("/account")
@@ -48,15 +49,15 @@ public class AccountController {
         return accountService.getAccountsByuserId(userId)
                 .stream().map(accountDto ->
                         AccountInfo.builder()
-                        .accountNumber(accountDto.getAccountNumber())
-                        .balance(accountDto.getBalance())
-                        .build())
+                                .accountNumber(accountDto.getAccountNumber())
+                                .balance(accountDto.getBalance())
+                                .build())
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/account/{id}")
     public Account getAccount(
-            @PathVariable Long id){
+            @PathVariable Long id) {
         return accountService.getAccount(id);
     }
 }

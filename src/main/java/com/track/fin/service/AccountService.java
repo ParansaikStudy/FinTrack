@@ -100,5 +100,4 @@ public class AccountService {
             throw new AccountException(ErrorCode.BALANCE_NOT_EMPTY);
         }
     }
-
 }

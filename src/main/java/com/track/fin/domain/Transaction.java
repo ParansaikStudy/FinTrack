@@ -40,5 +40,4 @@ public class Transaction {
     private LocalDateTime registeredAt;
     @LastModifiedDate
     private LocalDateTime unregisteredAt;
-
 }

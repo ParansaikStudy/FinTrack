@@ -13,9 +13,7 @@ public class CancelBalance {
     @Getter
     @Setter
     @AllArgsConstructor
-    //요청
     public static class Request {
-
         @NotBlank
         private Long transactionId;
 
@@ -33,7 +31,6 @@ public class CancelBalance {
     @Setter
     @AllArgsConstructor
     @Builder
-    // 응답
     public static class Response {
 
         private String accountNumber;
@@ -41,8 +38,6 @@ public class CancelBalance {
         private String transactionId;
         private Long amount;
         private LocalDateTime transactedAt;
-
-
 
         public static Response from(TransactionDto transactionDto) {
             return Response.builder()
@@ -52,7 +47,6 @@ public class CancelBalance {
                     .amount(transactionDto.getAmount())
                     .transactedAt(transactionDto.getTransactedAt())
                     .build();
-
         }
     }
 }

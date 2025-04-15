@@ -13,7 +13,6 @@ public class UseBalance {
     @Getter
     @Setter
     @AllArgsConstructor
-    //요청
     public static class Request {
         @NotNull
         @Min(1)
@@ -33,15 +32,12 @@ public class UseBalance {
     @Setter
     @AllArgsConstructor
     @Builder
-    // 응답
     public static class Response {
-
         private String accountNumber;
         private TransactionResultType transactionResult;
         private String transactionId;
         private Long amount;
         private LocalDateTime transactedAt;
-
 
         public static Response from(TransactionDto transactionDto) {
             return Response.builder()

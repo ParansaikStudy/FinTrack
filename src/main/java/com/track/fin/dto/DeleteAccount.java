@@ -15,7 +15,6 @@ public class DeleteAccount {
     @Getter
     @Setter
     @AllArgsConstructor
-    //요청
     public static class Request {
         @NotNull
         @Min(1)
@@ -30,13 +29,12 @@ public class DeleteAccount {
     @Setter
     @AllArgsConstructor
     @Builder
-    // 응답
     public static class Response {
         private Long userId;
         private String accountNumber;
         private LocalDateTime unRegisteredAt;
 
-        public static Response from (AccountDto accountDto) {
+        public static Response from(AccountDto accountDto) {
             return Response.builder()
                     .userId(accountDto.getUserId())
                     .accountNumber(accountDto.getAccountNumber())

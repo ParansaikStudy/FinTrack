@@ -123,5 +123,4 @@ public class TransactionService {
             throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
         }
     }
-
 }

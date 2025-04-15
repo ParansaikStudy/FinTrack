@@ -32,5 +32,4 @@ public class TransactionDto {
                 .transactedAt(transaction.getTransactedAt())
                 .build();
     }
-
 }
