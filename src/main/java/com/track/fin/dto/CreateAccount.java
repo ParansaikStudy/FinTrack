@@ -10,10 +10,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 public class CreateAccount {
+
     @Getter
     @Setter
     @AllArgsConstructor
     public static class Request {
+
         @NotNull
         @Min(1)
         private Long userId;
@@ -28,8 +30,11 @@ public class CreateAccount {
     @AllArgsConstructor
     @Builder
     public static class Response {
+
         private Long userId;
+
         private String accountNumber;
+
         private LocalDateTime registeredAt;
 
         public static Response from(AccountDto accountDto) {

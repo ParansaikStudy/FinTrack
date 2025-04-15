@@ -11,11 +11,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class AccountDto {
+
     private Long userId;
+
     private String accountNumber;
+
     private Long balance;
 
     private LocalDateTime registeredAt;
+
     private LocalDateTime unregisteredAt;
 
     public static AccountDto fromEntity(Account account) {

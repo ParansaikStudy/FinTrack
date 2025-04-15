@@ -13,11 +13,17 @@ import java.time.LocalDateTime;
 @Builder
 
 public class QueryTransactionResponse {
+
     private String accountNumber;
+
     private TransactionType transactionType;
+
     private TransactionResultType transactionResult;
+
     private String transactionId;
+
     private Long amount;
+
     private LocalDateTime transactedAt;
 
     public static QueryTransactionResponse from(TransactionDto transactionDto) {
@@ -29,6 +35,5 @@ public class QueryTransactionResponse {
                 .amount(transactionDto.getAmount())
                 .transactedAt(transactionDto.getTransactedAt())
                 .build();
-
     }
 }

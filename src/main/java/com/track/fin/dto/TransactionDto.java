@@ -13,12 +13,19 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class TransactionDto {
+
     private String accountNumber;
+
     private TransactionType transactionType;
+
     private TransactionResultType transactionResultType;
+
     private Long amount;
+
     private Long balanceSnapshot;
+
     private String transactionId;
+
     private LocalDateTime transactedAt;
 
     public static TransactionDto fromEntity(Transaction transaction) {
