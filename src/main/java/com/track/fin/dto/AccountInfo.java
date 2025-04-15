@@ -8,7 +8,6 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class AccountInfo {
-
     private String accountNumber;
     private Long balance;
 }

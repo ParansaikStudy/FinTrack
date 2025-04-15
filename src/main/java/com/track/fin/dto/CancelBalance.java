@@ -34,9 +34,13 @@ public class CancelBalance {
     public static class Response {
 
         private String accountNumber;
+
         private TransactionResultType transactionResult;
+
         private String transactionId;
+
         private Long amount;
+
         private LocalDateTime transactedAt;
 
         public static Response from(TransactionDto transactionDto) {

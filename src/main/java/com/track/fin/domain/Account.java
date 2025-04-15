@@ -25,14 +25,17 @@ public class Account {
 
     @ManyToOne
     private AccountUser accountUser;
+
     private String accountNumber;
 
     @Enumerated(EnumType.STRING)
     private AccountStatus accountStatus;
+
     private Long balance;
 
     @CreatedDate
     private LocalDateTime registeredAt;
+
     @LastModifiedDate
     private LocalDateTime unregisteredAt;
 
