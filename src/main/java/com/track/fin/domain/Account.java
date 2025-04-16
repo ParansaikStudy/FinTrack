@@ -2,6 +2,7 @@ package com.track.fin.domain;
 
 import com.track.fin.exception.AccountException;
 import com.track.fin.type.AccountStatus;
+import com.track.fin.type.AccountType;
 import com.track.fin.type.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,12 +28,19 @@ public class Account {
     @ManyToOne
     private AccountUser accountUser;
 
+    @Column(unique = true, nullable = false)
     private String accountNumber;
 
     @Enumerated(EnumType.STRING)
     private AccountStatus accountStatus;
 
     private Long balance;
+
+    @Enumerated(EnumType.STRING)
+    private AccountType accountType;
+
+    private Long minBalance;
+
 
     @CreatedDate
     private LocalDateTime registeredAt;
