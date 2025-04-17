@@ -7,6 +7,7 @@ import com.track.fin.exception.AccountException;
 import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.AccountUserRepository;
 import com.track.fin.type.AccountStatus;
+import com.track.fin.type.AccountType;
 import com.track.fin.type.ErrorCode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,24 +28,24 @@ public class AccountService {
     private final AccountUserRepository accountUserRepository;
 
     @Transactional
-    public AccountDto createAccount(Long userId, Long initialBalance) {
+    public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
         AccountUser accountUser = accountUserRepository.findById(userId)
                 .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
 
         validateCreateAccount(accountUser);
-        String newAccountNumber = accountRepository.findFirstByOrderByIdDesc()
-                .map(account -> (Integer.parseInt(account.getAccountNumber())) + 1 + " ")
-                .orElse("1000000000");
+        validateInitialBalance(initialBalance, accountType);
 
-        return AccountDto.fromEntity(
-                accountRepository.save(Account.builder()
-                        .accountUser(accountUser)
-                        .accountStatus(AccountStatus.IN_USE)
-                        .accountNumber(newAccountNumber)
-                        .balance(initialBalance)
-                        .registeredAt(LocalDateTime.now())
-                        .build())
-        );
+        String newAccountNumber = generateUniqueAccountNumber();
+        Account account = accountRepository.save(Account.builder()
+                .accountUser(accountUser)
+                .accountStatus(AccountStatus.IN_USE)
+                .accountNumber(newAccountNumber)
+                .balance(initialBalance)
+                .accountType(accountType)
+                .registeredAt(LocalDateTime.now())
+                .build());
+
+        return AccountDto.fromEntity(account);
     }
 
     @Transactional
@@ -99,5 +100,37 @@ public class AccountService {
         if (account.getBalance() > 0) {
             throw new AccountException(ErrorCode.BALANCE_NOT_EMPTY);
         }
+    }
+
+    private void validateInitialBalance(Long initialBalance, AccountType accountType) {
+        long requiredMin;
+
+        switch (accountType) {
+            case SAVINGS:
+                requiredMin = 1000;
+                break;
+            case DEPOSIT:
+                requiredMin = 10000;
+                break;
+            case LOANS:
+                requiredMin = 0;
+                break;
+            default:
+                requiredMin = 1000;
+        }
+
+        if (initialBalance < requiredMin) {
+            throw new AccountException(ErrorCode.INSUFFICIENT_INITIAL_BALANCE);
+        }
+    }
+
+    private String generateUniqueAccountNumber() {
+        String accountNumber;
+
+        do {
+            accountNumber = String.valueOf(1000000000L + (long) (Math.random() * 9000000000L));
+        } while (accountRepository.existsByAccountNumber(accountNumber));
+
+        return accountNumber;
     }
 }

@@ -1,11 +1,9 @@
 package com.track.fin.dto;
 
+import com.track.fin.type.AccountType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -14,11 +12,16 @@ public class CreateAccount {
     @Getter
     @Setter
     @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
     public static class Request {
 
         @NotNull
         @Min(1)
         private Long userId;
+
+        @NotNull
+        private AccountType accountType;
 
         @NotNull
         @Min(0)

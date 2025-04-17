@@ -1,6 +1,7 @@
 package com.track.fin.dto;
 
 import com.track.fin.domain.Account;
+import com.track.fin.type.AccountType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,8 @@ public class AccountDto {
 
     private Long balance;
 
+    private AccountType accountType;
+
     private LocalDateTime registeredAt;
 
     private LocalDateTime unregisteredAt;
@@ -27,6 +30,7 @@ public class AccountDto {
                 .userId(account.getAccountUser().getId())
                 .accountNumber(account.getAccountNumber())
                 .balance(account.getBalance())
+                .accountType(account.getAccountType())
                 .registeredAt(account.getRegisteredAt())
                 .unregisteredAt(account.getUnregisteredAt())
                 .build();

@@ -25,7 +25,8 @@ public class AccountController {
     ) {
         AccountDto accountDto = accountService.createAccount(
                 request.getUserId(),
-                request.getInitialBalance()
+                request.getInitialBalance(),
+                request.getAccountType()
         );
         return CreateAccount.Response.from(accountDto);
     }
