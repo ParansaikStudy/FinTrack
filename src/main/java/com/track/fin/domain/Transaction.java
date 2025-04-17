@@ -33,11 +33,8 @@ public class Transaction {
     private Account account;
 
     private Long amount;
-
     private Long balanceSnapshot;
-
     private String transactionId;
-
     private LocalDateTime transactedAt;
 
     @CreatedDate
