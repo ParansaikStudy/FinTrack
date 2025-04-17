@@ -3,10 +3,12 @@ package com.track.fin.service;
 import com.track.fin.domain.Account;
 import com.track.fin.domain.AccountUser;
 import com.track.fin.dto.AccountDto;
+import com.track.fin.record.AccountRecord;
 import com.track.fin.exception.AccountException;
 import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.AccountUserRepository;
 import com.track.fin.type.AccountStatus;
+import com.track.fin.type.AccountType;
 import com.track.fin.type.ErrorCode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,28 +25,30 @@ import static com.track.fin.type.ErrorCode.USER_NOT_FOUND;
 @RequiredArgsConstructor
 public class AccountService {
 
+    private final int SAVINGS_DEFAULT_AMOUNT = 1000;
+
     private final AccountRepository accountRepository;
     private final AccountUserRepository accountUserRepository;
 
     @Transactional
-    public AccountDto createAccount(Long userId, Long initialBalance) {
+    public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
         AccountUser accountUser = accountUserRepository.findById(userId)
                 .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
 
         validateCreateAccount(accountUser);
-        String newAccountNumber = accountRepository.findFirstByOrderByIdDesc()
-                .map(account -> (Integer.parseInt(account.getAccountNumber())) + 1 + " ")
-                .orElse("1000000000");
+        validateInitialBalance(initialBalance, accountType);
 
-        return AccountDto.fromEntity(
-                accountRepository.save(Account.builder()
-                        .accountUser(accountUser)
-                        .accountStatus(AccountStatus.IN_USE)
-                        .accountNumber(newAccountNumber)
-                        .balance(initialBalance)
-                        .registeredAt(LocalDateTime.now())
-                        .build())
-        );
+        String newAccountNumber = generateUniqueAccountNumber();
+        Account account = accountRepository.save(Account.builder()
+                .accountUser(accountUser)
+                .accountStatus(AccountStatus.IN_USE)
+                .accountNumber(newAccountNumber)
+                .balance(initialBalance)
+                .accountType(accountType)
+                .registeredAt(LocalDateTime.now())
+                .build());
+
+        return AccountRecord.from(account);
     }
 
     @Transactional
@@ -67,7 +71,7 @@ public class AccountService {
         account.setAccountStatus(AccountStatus.UNREGISTERED);
         account.setUnregisteredAt(LocalDateTime.now());
 
-        return AccountDto.fromEntity(accountRepository.save(account));
+        return AccountRecord.from(accountRepository.save(account));
     }
 
     @Transactional
@@ -79,7 +83,7 @@ public class AccountService {
                 .findByAccountUser(accountUser);
 
         return accounts.stream()
-                .map(AccountDto::fromEntity)
+                .map(AccountRecord::from)
                 .collect(Collectors.toList());
     }
 
@@ -99,5 +103,41 @@ public class AccountService {
         if (account.getBalance() > 0) {
             throw new AccountException(ErrorCode.BALANCE_NOT_EMPTY);
         }
+    }
+
+
+    // 정수 숫자를 사용 하면 X
+    // 1. 재사용성 x
+    // 2. 계산 할 때 오타 -> 컴파일 시점에서 오류가 안생겨서 에러 잡기 힘듦
+    // 3. 코드 리뷰할 때 이
+    private void validateInitialBalance(Long initialBalance, AccountType accountType) {
+        if (initialBalance < accountType.getDefaultBalance()) {
+            throw new AccountException(ErrorCode.INSUFFICIENT_INITIAL_BALANCE);
+        }
+    }
+
+    // 개발 잘하시는 분들은 enum을 기가막히게 쓰십니다
+    // 그래서 enum 공부 많이 하세요
+    // review 용
+    private Double calculatorRate(AccountType accountType) {
+//        double rate = 0.0D;
+//        if (accountType.equals(AccountType.SAVINGS)) {
+//            rate = 10000000 * 0.1;
+//        } else if (accountType.equals(AccountType.DEPOSIT.DEPOSIT)) {
+//            rate = 10000 * 0.2;
+//        } else {
+//            rate = 0;
+//        }
+        return accountType.getDefaultBalance() * accountType.getDefaultRate();
+    }
+
+    private String generateUniqueAccountNumber() {
+        String accountNumber;
+
+        do {
+            accountNumber = String.valueOf(1000000000L + Math.random() * 9000000000L);
+        } while (accountRepository.existsByAccountNumber(accountNumber));
+
+        return accountNumber;
     }
 }
