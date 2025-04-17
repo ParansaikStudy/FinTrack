@@ -5,6 +5,7 @@ import com.track.fin.type.TransactionType;
 import lombok.*;
 
 import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -12,14 +13,18 @@ import java.time.LocalDateTime;
 @Builder
 
 public class QueryTransactionResponse {
+
     private String accountNumber;
+
     private TransactionType transactionType;
+
     private TransactionResultType transactionResult;
+
     private String transactionId;
+
     private Long amount;
+
     private LocalDateTime transactedAt;
-
-
 
     public static QueryTransactionResponse from(TransactionDto transactionDto) {
         return QueryTransactionResponse.builder()
@@ -30,7 +35,5 @@ public class QueryTransactionResponse {
                 .amount(transactionDto.getAmount())
                 .transactedAt(transactionDto.getTransactedAt())
                 .build();
-
     }
-
 }

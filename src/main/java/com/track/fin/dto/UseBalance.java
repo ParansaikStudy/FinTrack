@@ -10,11 +10,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 public class UseBalance {
+
     @Getter
     @Setter
     @AllArgsConstructor
-    //요청
     public static class Request {
+
         @NotNull
         @Min(1)
         private Long userId;
@@ -33,15 +34,17 @@ public class UseBalance {
     @Setter
     @AllArgsConstructor
     @Builder
-    // 응답
     public static class Response {
 
         private String accountNumber;
-        private TransactionResultType transactionResult;
-        private String transactionId;
-        private Long amount;
-        private LocalDateTime transactedAt;
 
+        private TransactionResultType transactionResult;
+
+        private String transactionId;
+
+        private Long amount;
+
+        private LocalDateTime transactedAt;
 
         public static Response from(TransactionDto transactionDto) {
             return Response.builder()
@@ -51,7 +54,6 @@ public class UseBalance {
                     .amount(transactionDto.getAmount())
                     .transactedAt(transactionDto.getTransactedAt())
                     .build();
-
         }
     }
 }

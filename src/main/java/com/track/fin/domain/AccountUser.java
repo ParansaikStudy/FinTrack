@@ -19,15 +19,16 @@ import java.time.LocalDateTime;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 public class AccountUser {
+
     @Id
-    @GeneratedValue // 자동으로 값 생성
+    @GeneratedValue
     private Long id;
 
-    private String name; // 사용자의 이름
+    private String name;
 
     @CreatedDate
     private LocalDateTime createdAt;
+
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
 }

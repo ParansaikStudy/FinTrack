@@ -25,20 +25,24 @@ public class Transaction {
 
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
+
     @Enumerated(EnumType.STRING)
     private TransactionResultType transactionResultType;
 
     @ManyToOne
     private Account account;
+
     private Long amount;
+
     private Long balanceSnapshot;
 
     private String transactionId;
+
     private LocalDateTime transactedAt;
 
     @CreatedDate
     private LocalDateTime registeredAt;
+
     @LastModifiedDate
     private LocalDateTime unregisteredAt;
-
 }
