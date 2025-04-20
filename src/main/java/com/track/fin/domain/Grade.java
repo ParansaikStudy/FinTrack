@@ -1,14 +1,12 @@
 package com.track.fin.domain;
 
-import com.track.fin.type.TransactionMethodType;
-import com.track.fin.type.TransactionResultType;
-import com.track.fin.type.TransactionType;
+import com.track.fin.type.GradeType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 
 @Getter
@@ -18,26 +16,22 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class Transaction {
+public class Grade {
 
     @Id
     @GeneratedValue
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private TransactionType transactionType;
+    private GradeType grade;
 
-    @CreatedDate
-    private LocalDateTime transactionDate;
+    private Long monthlyBalance;
 
-    @Enumerated(EnumType.STRING)
-    private TransactionMethodType transactionMethodType;
+    private Long totalTransaction;
 
     private Long amount;
 
-    private Long fee;
-
-    private String memeo;
+    private DecimalFormat discount;
 
     @CreatedDate
     private LocalDateTime createdAt;

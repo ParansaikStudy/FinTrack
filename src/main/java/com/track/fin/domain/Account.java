@@ -7,6 +7,7 @@ import com.track.fin.type.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -26,7 +27,7 @@ public class Account {
     private Long id;
 
     @ManyToOne
-    private AccountUser accountUser;
+    private User user;
 
     @Column(unique = true, nullable = false)
     private String accountNumber;
@@ -41,10 +42,11 @@ public class Account {
 
     private Long minBalance;
 
-    @CreatedDate
-    private LocalDateTime registeredAt;
+    private Boolean autoTransfer;
 
-    @LastModifiedDate
+    @CreatedDate
+    private LocalDateTime createdAt;
+
     private LocalDateTime unregisteredAt;
 
     public void useBalance(Long amount) {

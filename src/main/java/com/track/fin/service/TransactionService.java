@@ -1,7 +1,7 @@
 package com.track.fin.service;
 
 import com.track.fin.domain.Account;
-import com.track.fin.domain.AccountUser;
+import com.track.fin.domain.User;
 import com.track.fin.domain.Transaction;
 import com.track.fin.dto.TransactionDto;
 import com.track.fin.exception.AccountException;
@@ -37,7 +37,7 @@ public class TransactionService {
 
     @Transactional
     public TransactionDto useBalance(Long userId, String accountNumber, Long amount) {
-        AccountUser user = accountUserRepository.findById(userId)
+        User user = accountUserRepository.findById(userId)
                 .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
@@ -112,8 +112,8 @@ public class TransactionService {
         }
     }
 
-    private void validateUserBalance(AccountUser user, Account account, Long amount) {
-        if (!Objects.equals(user.getId(), account.getAccountUser().getId())) {
+    private void validateUserBalance(User user, Account account, Long amount) {
+        if (!Objects.equals(user.getId(), account.getUser().getId())) {
             throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
         }
         if (account.getAccountStatus() != AccountStatus.IN_USE) {

@@ -19,7 +19,7 @@ public record AccountRecord(
 
     public static AccountDto from(Account account) {
         return AccountDto.builder()
-                .userId(account.getAccountUser().getId())
+                .userId(account.getUser().getId())
                 .accountNumber(account.getAccountNumber())
                 .balance(account.getBalance())
                 .accountType(account.getAccountType())

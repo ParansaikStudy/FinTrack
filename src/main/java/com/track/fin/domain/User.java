@@ -1,39 +1,41 @@
 package com.track.fin.domain;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @Entity
-public class AutoTransfer {
+@EntityListeners(AuditingEntityListener.class)
+public class User {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    @ManyToOne
-    private Account withdrawalAccount;
+    private String name;
 
-    @ManyToOne
-    private Account depositAccount;
+    private String phone;
 
-    private Long amount;
+    private String login_id;
 
-    private String schedule;
+    private String password;
 
-    private boolean active;
+    private LocalDateTime birthDate;
 
     @CreatedDate
     private LocalDateTime createdAt;
+
+    private LocalDateTime unregisteredAt;
 
 }

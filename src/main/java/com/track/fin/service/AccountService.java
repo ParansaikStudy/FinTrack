@@ -1,7 +1,7 @@
 package com.track.fin.service;
 
 import com.track.fin.domain.Account;
-import com.track.fin.domain.AccountUser;
+import com.track.fin.domain.User;
 import com.track.fin.dto.AccountDto;
 import com.track.fin.record.AccountRecord;
 import com.track.fin.exception.AccountException;
@@ -32,15 +32,15 @@ public class AccountService {
 
     @Transactional
     public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
-        AccountUser accountUser = accountUserRepository.findById(userId)
+        User user = accountUserRepository.findById(userId)
                 .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
 
-        validateCreateAccount(accountUser);
+        validateCreateAccount(user);
         validateInitialBalance(initialBalance, accountType);
 
         String newAccountNumber = generateUniqueAccountNumber();
         Account account = accountRepository.save(Account.builder()
-                .accountUser(accountUser)
+                .user(user)
                 .accountStatus(AccountStatus.IN_USE)
                 .accountNumber(newAccountNumber)
                 .balance(initialBalance)
@@ -61,12 +61,12 @@ public class AccountService {
 
     @Transactional
     public AccountDto deleteAccount(Long userId, String accountNumber) {
-        AccountUser accountUser = accountUserRepository.findById(userId)
+        User user = accountUserRepository.findById(userId)
                 .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
 
-        validateDeleteAccount(accountUser, account);
+        validateDeleteAccount(user, account);
 
         account.setAccountStatus(AccountStatus.UNREGISTERED);
         account.setUnregisteredAt(LocalDateTime.now());
@@ -76,25 +76,25 @@ public class AccountService {
 
     @Transactional
     public List<AccountDto> getAccountsByuserId(Long userId) {
-        AccountUser accountUser = accountUserRepository.findById(userId)
+        User user = accountUserRepository.findById(userId)
                 .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
 
         List<Account> accounts = accountRepository
-                .findByAccountUser(accountUser);
+                .findByAccountUser(user);
 
         return accounts.stream()
                 .map(AccountRecord::from)
                 .collect(Collectors.toList());
     }
 
-    private void validateCreateAccount(AccountUser accountUser) {
-        if (accountRepository.countByAccountUser(accountUser) == 10) {
+    private void validateCreateAccount(User user) {
+        if (accountRepository.countByAccountUser(user) == 10) {
             throw new AccountException(ErrorCode.MAX_ACCOUNT_PER_USER_10);
         }
     }
 
-    private void validateDeleteAccount(AccountUser accountUser, Account account) {
-        if (!Objects.equals(accountUser.getId(), account.getAccountUser().getId())) {
+    private void validateDeleteAccount(User user, Account account) {
+        if (!Objects.equals(user.getId(), account.getUser().getId())) {
             throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
         }
         if (account.getAccountStatus() == AccountStatus.UNREGISTERED) {
