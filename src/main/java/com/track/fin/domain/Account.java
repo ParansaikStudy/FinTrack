@@ -45,7 +45,7 @@ public class Account {
     private Boolean autoTransfer;
 
     @CreatedDate
-    private LocalDateTime RegisteredAt;
+    private LocalDateTime registeredAt;
 
     private LocalDateTime unregisteredAt;
 

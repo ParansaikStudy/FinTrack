@@ -116,7 +116,7 @@ public class TransactionService {
         if (!Objects.equals(user.getId(), account.getUser().getId())) {
             throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
         }
-        if (account.getAccountStatus() != AccountStatus.IN_USE) {
+        if (account.getAccountStatus() != AccountStatus.ACTIVE) {
             throw new AccountException(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED);
         }
         if (account.getBalance() < amount) {
