@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.track.fin.type.ErrorCode.ACCOUNT_NOT_FOUND;
 import static com.track.fin.type.ErrorCode.USER_NOT_FOUND;
 
 @Service
@@ -60,21 +61,6 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto deleteAccount(Long userId, String accountNumber) {
-        AccountUser accountUser = accountUserRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-
-        validateDeleteAccount(accountUser, account);
-
-        account.setAccountStatus(AccountStatus.UNREGISTERED);
-        account.setUnregisteredAt(LocalDateTime.now());
-
-        return AccountRecord.from(accountRepository.save(account));
-    }
-
-    @Transactional
     public List<AccountDto> getAccountsByuserId(Long userId) {
         AccountUser accountUser = accountUserRepository.findById(userId)
                 .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
@@ -91,6 +77,21 @@ public class AccountService {
         if (accountRepository.countByAccountUser(accountUser) == 10) {
             throw new AccountException(ErrorCode.MAX_ACCOUNT_PER_USER_10);
         }
+    }
+
+    @Transactional
+    public AccountDto deleteAccount(Long userId, String accountNumber) {
+        AccountUser accountUser = accountUserRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+
+        validateDeleteAccount(accountUser, account);
+
+        account.setAccountStatus(AccountStatus.UNREGISTERED);
+        account.setUnregisteredAt(LocalDateTime.now());
+
+        return AccountRecord.from(accountRepository.save(account));
     }
 
     private void validateDeleteAccount(AccountUser accountUser, Account account) {

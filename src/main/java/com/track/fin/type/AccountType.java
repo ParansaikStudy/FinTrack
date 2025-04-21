@@ -4,6 +4,5 @@ public enum AccountType {
 
     DEPOSIT,
     SAVINGS,
-    LOANS,
-
+    LOANS
 }
