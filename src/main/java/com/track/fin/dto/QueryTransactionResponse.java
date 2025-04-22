@@ -4,8 +4,6 @@ import com.track.fin.type.TransactionResultType;
 import com.track.fin.type.TransactionType;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,16 +22,15 @@ public class QueryTransactionResponse {
 
     private Long amount;
 
-    private LocalDateTime transactedAt;
 
     public static QueryTransactionResponse from(TransactionDto transactionDto) {
         return QueryTransactionResponse.builder()
                 .accountNumber(transactionDto.getAccountNumber())
                 .transactionType(transactionDto.getTransactionType())
                 .transactionResult(transactionDto.getTransactionResultType())
-                .transactionId(transactionDto.getTransactionId())
+                .transactionId(transactionDto.getId())
                 .amount(transactionDto.getAmount())
-                .transactedAt(transactionDto.getTransactedAt())
                 .build();
     }
+
 }

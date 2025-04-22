@@ -1,11 +1,11 @@
 package com.track.fin.domain;
 
+import com.track.fin.type.TransactionMethodType;
 import com.track.fin.type.TransactionResultType;
 import com.track.fin.type.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -20,8 +20,11 @@ import java.time.LocalDateTime;
 public class Transaction {
 
     @Id
-    @GeneratedValue
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    @ManyToOne
+    private Account account;
 
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
@@ -29,17 +32,18 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionResultType transactionResultType;
 
-    @ManyToOne
-    private Account account;
-
-    private Long amount;
-    private Long balanceSnapshot;
-    private String transactionId;
-    private LocalDateTime transactedAt;
+    @Enumerated(EnumType.STRING)
+    private TransactionMethodType transactionMethodType;
 
     @CreatedDate
-    private LocalDateTime registeredAt;
+    private LocalDateTime transactionDate;
 
-    @LastModifiedDate
-    private LocalDateTime unregisteredAt;
+    private Long amount;
+
+    private Long balanceSnapshot;
+
+    private Long fee;
+
+    private String memo;
+
 }

@@ -7,8 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 public class UseBalance {
 
     @Getter
@@ -44,16 +42,14 @@ public class UseBalance {
 
         private Long amount;
 
-        private LocalDateTime transactedAt;
-
         public static Response from(TransactionDto transactionDto) {
             return Response.builder()
                     .accountNumber(transactionDto.getAccountNumber())
                     .transactionResult(transactionDto.getTransactionResultType())
-                    .transactionId(transactionDto.getTransactionId())
+                    .transactionId(transactionDto.getId())
                     .amount(transactionDto.getAmount())
-                    .transactedAt(transactionDto.getTransactedAt())
                     .build();
         }
     }
+
 }
