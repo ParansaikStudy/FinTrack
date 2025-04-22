@@ -1,8 +1,9 @@
 package com.track.fin.type;
 
-public enum LoanStstus {
+public enum LoanType {
 
     DELINQUENCY,
     REDEMPTION,
     PREPAYMENT,
+
 }

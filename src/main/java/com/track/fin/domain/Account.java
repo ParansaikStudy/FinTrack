@@ -5,16 +5,16 @@ import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
 import com.track.fin.type.ErrorCode;
 import jakarta.persistence.*;
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
+import static com.track.fin.type.AccountStatus.LOCKED;
+import static com.track.fin.type.AccountType.LOANS;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 public class Account {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
@@ -32,35 +32,34 @@ public class Account {
     @Column(unique = true, nullable = false)
     private String accountNumber;
 
-    @Enumerated(EnumType.STRING)
-    private AccountStatus accountStatus;
-
     private Long balance;
-
-    @Enumerated(EnumType.STRING)
-    private AccountType accountType;
 
     private Long minBalance;
 
     private Boolean autoTransfer;
 
-    @CreatedDate
-    private LocalDateTime registeredAt;
+    @Enumerated(EnumType.STRING)
+    private AccountType accountType;
 
-    private LocalDateTime unregisteredAt;
+    @Enumerated(EnumType.STRING)
+    private AccountStatus accountStatus;
 
     public void useBalance(Long amount) {
+        if (accountStatus == LOCKED) {
+            // TODO: 담보 받은 금액 외에 사용 가능
+            return;
+        }
         if (amount > balance) {
             throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
         }
         balance -= amount;
     }
 
-    public void cancelBalance(Long amount) {
-        if (amount > 0) {
-            throw new AccountException(ErrorCode.INVALID_REQUEST);
-        }
-        balance += amount;
+    public void afterLoan() {
+        accountType = LOANS;
+        accountStatus = LOCKED;
     }
+
+    // TODO: 사용자 생성 시 기본 회원 등급은 BRONZE
 
 }

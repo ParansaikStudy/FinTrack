@@ -1,6 +1,6 @@
 package com.track.fin.type;
 
-public enum TransactionResultType {
+public enum LoanStatus {
 
     SUCCESS,
     FAIL,

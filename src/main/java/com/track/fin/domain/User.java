@@ -1,11 +1,7 @@
 package com.track.fin.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -20,8 +16,11 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToOne
+    private Grade grade;
 
     private String name;
 
@@ -32,10 +31,5 @@ public class User {
     private String password;
 
     private LocalDateTime birthDate;
-
-    @CreatedDate
-    private LocalDateTime createdAt;
-
-    private LocalDateTime unregisteredAt;
 
 }

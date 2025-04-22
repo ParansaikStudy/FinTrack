@@ -1,15 +1,10 @@
 package com.track.fin.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -21,18 +16,14 @@ import java.time.LocalDateTime;
 public class Fee {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String policyName;
 
+    @Column(precision = 10, scale = 2)
     private BigDecimal discountRate;
 
-    private Long limit;
-
-    @CreatedDate
-    private LocalDateTime createdAt;
-
-    private LocalDateTime unregisteredAt;
+    private Long limitAmount;
 
 }

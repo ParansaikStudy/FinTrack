@@ -23,8 +23,6 @@ public record AccountRecord(
                 .accountNumber(account.getAccountNumber())
                 .balance(account.getBalance())
                 .accountType(account.getAccountType())
-                .registeredAt(account.getRegisteredAt())
-                .unregisteredAt(account.getUnregisteredAt())
                 .build();
     }
 

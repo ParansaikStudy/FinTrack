@@ -3,11 +3,7 @@ package com.track.fin.domain;
 import com.track.fin.type.GradeType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.text.DecimalFormat;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -19,23 +15,13 @@ import java.time.LocalDateTime;
 public class Grade {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @OneToOne
+    private User user;
+
     @Enumerated(EnumType.STRING)
-    private GradeType grade;
-
-    private Long monthlyBalance;
-
-    private Long totalTransaction;
-
-    private Long amount;
-
-    private DecimalFormat discount;
-
-    @CreatedDate
-    private LocalDateTime createdAt;
-
-    private LocalDateTime unregisteredAt;
+    private GradeType gradeType;
 
 }

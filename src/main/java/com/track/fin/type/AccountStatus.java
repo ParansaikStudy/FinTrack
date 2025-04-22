@@ -6,4 +6,5 @@ public enum AccountStatus {
     CLOSED,
     FROZEN,
     LOCKED,
+
 }
