@@ -60,6 +60,10 @@ public class Account {
         accountStatus = LOCKED;
     }
 
+    public void deposit(Long amount) {
+        this.balance += amount;
+    }
+
     // TODO: 사용자 생성 시 기본 회원 등급은 BRONZE
 
 }

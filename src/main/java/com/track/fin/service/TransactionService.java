@@ -121,4 +121,42 @@ public class TransactionService {
         }
     }
 
+    @Transactional
+    public Transaction deposit(Long userId, String accountNumber, Long amount) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        // 유효성 검사
+        validateDeposit(user, account);
+
+        // 잔액 증가
+        account.deposit(amount);
+
+        // 성공 거래 저장 및 반환
+        return saveAndGetTransaction(TransactionType.DEPOSIT, SUCCESS, account, amount);
+    }
+
+    @Transactional
+    public void saveFailedDepositTransaction(String accountNumber, Long amount) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        // 실패 거래 기록 저장
+        saveAndGetTransaction(TransactionType.DEPOSIT, FAIL, account, amount);
+    }
+
+    // 입금 유효성 검증
+    private void validateDeposit(User user, Account account) {
+        if (!Objects.equals(user.getId(), account.getUser().getId())) {
+            throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
+        }
+        if (account.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new AccountException(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED);
+        }
+    }
+
+
 }

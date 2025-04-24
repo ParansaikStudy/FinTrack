@@ -4,6 +4,8 @@ import com.track.fin.dto.CancelBalance;
 import com.track.fin.dto.QueryTransactionResponse;
 import com.track.fin.dto.UseBalance;
 import com.track.fin.exception.AccountException;
+import com.track.fin.record.DepositRequest;
+import com.track.fin.record.DepositResponse;
 import com.track.fin.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,31 @@ public class TransactionController {
             transactionService.saveFailedUseTransaction(
                     requset.getAccountNumber(),
                     requset.getAmount()
+            );
+            throw e;
+        }
+    }
+
+    @PostMapping("/transaction/deposit")
+    public DepositResponse deposit(
+            @Valid @RequestBody DepositRequest request
+    ) {
+        try {
+            // 입금 성공 시 응답 생성
+            return DepositResponse.from(
+                    transactionService.deposit(
+                            request.userId(),
+                            request.accountNumber(),
+                            request.amount()
+                    )
+            );
+        } catch (AccountException e) {
+            log.error("Failed to deposit.");
+
+            // 입금 실패 시 실패 거래 기록
+            transactionService.saveFailedDepositTransaction(
+                    request.accountNumber(),
+                    request.amount()
             );
             throw e;
         }
