@@ -2,9 +2,10 @@ package com.track.fin.record;
 
 import com.track.fin.domain.Transaction;
 
-public record DepositRequest(
+public record TransferRequest(
         Long userId,
-        String accountNumber,
+        String fromAccountNumber,
+        String toAccountNumber,
         Long amount
 ) {
 }

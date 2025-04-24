@@ -5,6 +5,7 @@ import com.track.fin.domain.Transaction;
 import com.track.fin.domain.User;
 import com.track.fin.dto.TransactionDto;
 import com.track.fin.exception.AccountException;
+import com.track.fin.record.TransferResponse;
 import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.TransactionRepository;
 import com.track.fin.repository.UserRepository;
@@ -129,13 +130,10 @@ public class TransactionService {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        // 유효성 검사
         validateDeposit(user, account);
 
-        // 잔액 증가
         account.deposit(amount);
 
-        // 성공 거래 저장 및 반환
         return saveAndGetTransaction(TransactionType.DEPOSIT, SUCCESS, account, amount);
     }
 
@@ -144,11 +142,9 @@ public class TransactionService {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        // 실패 거래 기록 저장
         saveAndGetTransaction(TransactionType.DEPOSIT, FAIL, account, amount);
     }
 
-    // 입금 유효성 검증
     private void validateDeposit(User user, Account account) {
         if (!Objects.equals(user.getId(), account.getUser().getId())) {
             throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
@@ -158,5 +154,82 @@ public class TransactionService {
         }
     }
 
+    @Transactional
+    public Transaction withdraw(Long userId, String accountNumber, Long amount) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
 
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        validateWithdraw(user, account, amount);
+
+        account.withdraw(amount);
+
+        return saveAndGetTransaction(TransactionType.WITHDRAWAL, SUCCESS, account, amount);
+    }
+
+    @Transactional
+    public void saveFailedWithdrawTransaction(String accountNumber, Long amount) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+        saveAndGetTransaction(TransactionType.WITHDRAWAL, FAIL, account, amount);
+    }
+
+    private void validateWithdraw(User user, Account account, Long amount) {
+        if (!Objects.equals(user.getId(), account.getUser().getId())) {
+            throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
+        }
+        if (account.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new AccountException(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED);
+        }
+        if (account.getBalance() < amount) {
+            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+        }
+    }
+
+    @Transactional
+    public TransferResponse transfer(Long userId, String fromAccountNumber, String toAccountNumber, Long amount) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+        Account fromAccount = accountRepository.findByAccountNumber(fromAccountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+        Account toAccount = accountRepository.findByAccountNumber(toAccountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        validateTransfer(user, fromAccount, toAccount, amount);
+
+        fromAccount.withdraw(amount);
+        toAccount.deposit(amount);
+
+        Transaction fromTransaction = saveAndGetTransaction(TransactionType.TRANSFER, SUCCESS, fromAccount, amount);
+        Transaction toTransaction = saveAndGetTransaction(TransactionType.TRANSFER, SUCCESS, toAccount, amount);
+
+        return TransferResponse.from(fromTransaction, toTransaction);
+    }
+
+    @Transactional
+    public void saveFailedTransferTransaction(String fromAccountNumber, String toAccountNumber, Long amount) {
+        Account fromAccount = accountRepository.findByAccountNumber(fromAccountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+        Account toAccount = accountRepository.findByAccountNumber(toAccountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+        saveAndGetTransaction(TransactionType.TRANSFER, FAIL, fromAccount, amount);
+        saveAndGetTransaction(TransactionType.TRANSFER, FAIL, toAccount, amount);
+    }
+
+    private void validateTransfer(User user, Account from, Account to, Long amount) {
+        if (!Objects.equals(user.getId(), from.getUser().getId())) {
+            throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
+        }
+        if (from.getAccountStatus() != AccountStatus.ACTIVE || to.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new AccountException(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED);
+        }
+        if (from.getBalance() < amount) {
+            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+        }
+        if (from.getAccountNumber().equals(to.getAccountNumber())) {
+            throw new AccountException(ErrorCode.INVALID_REQUEST);
+        }
+    }
 }

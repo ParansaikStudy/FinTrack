@@ -55,6 +55,8 @@ public class Account {
         balance -= amount;
     }
 
+    // TODO: 사용자 생성 시 기본 회원 등급은 BRONZE
+
     public void afterLoan() {
         accountType = LOANS;
         accountStatus = LOCKED;
@@ -64,6 +66,11 @@ public class Account {
         this.balance += amount;
     }
 
-    // TODO: 사용자 생성 시 기본 회원 등급은 BRONZE
+    public void withdraw(Long amount) {
+        if (this.balance < amount) {
+            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+        }
+        this.balance -= amount;
+    }
 
 }
