@@ -1,29 +1,31 @@
 package com.track.fin.domain;
 
+import com.track.fin.type.GradeType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 
 @Getter
-@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 @Entity
-@EntityListeners(AuditingEntityListener.class)
 public class Fee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String policyName;
+    @Enumerated(EnumType.STRING)
+    private GradeType gradeType;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal discountRate;
+    private BigDecimal collateralRate;
 
-    private Long limitAmount;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal interestRate;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discount;
 }
