@@ -12,7 +12,7 @@ import com.track.fin.type.AccountStatus;
 import com.track.fin.type.ErrorCode;
 import com.track.fin.type.TransactionResultType;
 import com.track.fin.type.TransactionType;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

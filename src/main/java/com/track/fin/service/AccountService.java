@@ -10,7 +10,7 @@ import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
 import com.track.fin.type.ErrorCode;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

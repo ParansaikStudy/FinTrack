@@ -69,4 +69,16 @@ public class Loan {
                 .build();
     }
 
+    public void update(User user, Account account, CreateLoan dto) {
+        this.user = user;
+        this.account = account;
+        this.balance = dto.balance();
+     //   this.loanDate = LocalDateTime.now();
+        this.delinquencyDate = dto.delinquencyDate();
+        this.loanStatus = dto.loanStatus();
+        this.loanType = dto.loanType();
+    }
+
+
+
 }
