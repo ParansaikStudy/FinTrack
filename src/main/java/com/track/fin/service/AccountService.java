@@ -1,12 +1,12 @@
 package com.track.fin.service;
 
 import com.track.fin.domain.Account;
-import com.track.fin.domain.AccountUser;
+import com.track.fin.domain.User;
 import com.track.fin.dto.AccountDto;
-import com.track.fin.record.AccountRecord;
 import com.track.fin.exception.AccountException;
+import com.track.fin.record.AccountRecord;
 import com.track.fin.repository.AccountRepository;
-import com.track.fin.repository.AccountUserRepository;
+import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
 import com.track.fin.type.ErrorCode;
@@ -14,7 +14,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -26,79 +26,73 @@ import static com.track.fin.type.ErrorCode.USER_NOT_FOUND;
 @RequiredArgsConstructor
 public class AccountService {
 
-    private final int SAVINGS_DEFAULT_AMOUNT = 1000;
-
+    private final UserService userService;
     private final AccountRepository accountRepository;
-    private final AccountUserRepository accountUserRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
-        AccountUser accountUser = accountUserRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        User user = userService.get(userId);
 
-        validateCreateAccount(accountUser);
+        validateCreateAccount(user);
         validateInitialBalance(initialBalance, accountType);
 
         String newAccountNumber = generateUniqueAccountNumber();
         Account account = accountRepository.save(Account.builder()
-                .accountUser(accountUser)
-                .accountStatus(AccountStatus.IN_USE)
+                .user(user)
+                .accountStatus(AccountStatus.ACTIVE)
                 .accountNumber(newAccountNumber)
                 .balance(initialBalance)
                 .accountType(accountType)
-                .registeredAt(LocalDateTime.now())
                 .build());
 
         return AccountRecord.from(account);
     }
 
     @Transactional
-    public Account getAccount(Long id) {
-        if (id < 0) {
+    public Account getAccount(Long accountId) {
+        if (accountId < 0) {
             throw new RuntimeException("Minus");
         }
-        return accountRepository.findById(id).get();
+        return accountRepository.findById(accountId).get();
+    }
+
+    // TODO: 특정 계좌 담보 대출 가능한 금액 출력
+    public BigDecimal getAccountCollateralRate(Long userId, Long accountId) {
+        User user = userService.get(userId);
+        Account account = this.getAccount(accountId);
+        // 회원 등급에 따른 %
+        return user.getGrade().getGradeType().getCollateralRate().multiply(BigDecimal.valueOf(account.getBalance()));
     }
 
     @Transactional
+    public List<Account> getAccounts(Long userId) {
+        return accountRepository.findByUserId(userId);
+    }
+
     public List<AccountDto> getAccountsByuserId(Long userId) {
-        AccountUser accountUser = accountUserRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        User user = userService.get(userId);
 
         List<Account> accounts = accountRepository
-                .findByAccountUser(accountUser);
+                .findByUser(user);
 
         return accounts.stream()
                 .map(AccountRecord::from)
                 .collect(Collectors.toList());
     }
 
-    private void validateCreateAccount(AccountUser accountUser) {
-        if (accountRepository.countByAccountUser(accountUser) == 10) {
+    private void validateCreateAccount(User user) {
+        if (accountRepository.countByUser(user) == 10) {
             throw new AccountException(ErrorCode.MAX_ACCOUNT_PER_USER_10);
         }
     }
 
-    @Transactional
-    public AccountDto deleteAccount(Long userId, String accountNumber) {
-        AccountUser accountUser = accountUserRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
 
-        validateDeleteAccount(accountUser, account);
-
-        account.setAccountStatus(AccountStatus.UNREGISTERED);
-        account.setUnregisteredAt(LocalDateTime.now());
-
-        return AccountRecord.from(accountRepository.save(account));
-    }
-
-    private void validateDeleteAccount(AccountUser accountUser, Account account) {
-        if (!Objects.equals(accountUser.getId(), account.getAccountUser().getId())) {
+    private void validateDeleteAccount(User user, Account account) {
+        if (!Objects.equals(user.getId(), account.getUser().getId())) {
             throw new AccountException(ErrorCode.USER_ACCOUNT_UNMATCH);
         }
-        if (account.getAccountStatus() == AccountStatus.UNREGISTERED) {
+        if (account.getAccountStatus() == AccountStatus.CLOSED) {
             throw new AccountException(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED);
         }
         if (account.getBalance() > 0) {
@@ -112,7 +106,7 @@ public class AccountService {
     // 2. 계산 할 때 오타 -> 컴파일 시점에서 오류가 안생겨서 에러 잡기 힘듦
     // 3. 코드 리뷰할 때 이
     private void validateInitialBalance(Long initialBalance, AccountType accountType) {
-        if (initialBalance < accountType.getDefaultBalance()) {
+        if (accountType.getBalance().equals(initialBalance)) {
             throw new AccountException(ErrorCode.INSUFFICIENT_INITIAL_BALANCE);
         }
     }
@@ -129,16 +123,11 @@ public class AccountService {
 //        } else {
 //            rate = 0;
 //        }
-        return accountType.getDefaultBalance() * accountType.getDefaultRate();
+        return accountType.getBalance() * accountType.getRate();
     }
 
     private String generateUniqueAccountNumber() {
-        String accountNumber;
-
-        do {
-            accountNumber = String.valueOf(1000000000L + Math.random() * 9000000000L);
-        } while (accountRepository.existsByAccountNumber(accountNumber));
-
-        return accountNumber;
+        return String.valueOf(1000000000L + Math.random() * 9000000000L);
     }
+
 }

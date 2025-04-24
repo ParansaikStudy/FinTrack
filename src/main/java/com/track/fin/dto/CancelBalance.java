@@ -7,9 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 public class CancelBalance {
+
     @Getter
     @Setter
     @AllArgsConstructor
@@ -41,16 +40,14 @@ public class CancelBalance {
 
         private Long amount;
 
-        private LocalDateTime transactedAt;
-
         public static Response from(TransactionDto transactionDto) {
             return Response.builder()
                     .accountNumber(transactionDto.getAccountNumber())
                     .transactionResult(transactionDto.getTransactionResultType())
-                    .transactionId(transactionDto.getTransactionId())
+                    .transactionId(transactionDto.getId())
                     .amount(transactionDto.getAmount())
-                    .transactedAt(transactionDto.getTransactedAt())
                     .build();
         }
     }
+
 }
