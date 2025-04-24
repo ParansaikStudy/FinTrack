@@ -52,6 +52,8 @@ public class AccountController {
                         AccountInfo.builder()
                                 .accountNumber(accountDto.getAccountNumber())
                                 .balance(accountDto.getBalance())
+                                .accountStatus(accountDto.getAccountStatus())
+                                .registeredAt(accountDto.getRegisteredAt())
                                 .build())
                 .collect(Collectors.toList());
     }

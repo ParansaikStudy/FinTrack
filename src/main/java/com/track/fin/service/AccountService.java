@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.track.fin.type.ErrorCode.ACCOUNT_NOT_FOUND;
 import static com.track.fin.type.ErrorCode.USER_NOT_FOUND;
 
 @Service
@@ -69,20 +70,6 @@ public class AccountService {
         return accountRepository.findByUserId(userId);
     }
 
-    @Transactional
-    public AccountDto deleteAccount(Long userId, String accountNumber) {
-        User user = userService.get(userId);
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-
-        validateDeleteAccount(user, account);
-
-        account.afterLoan();
-
-        return AccountRecord.from(accountRepository.save(account));
-    }
-
-    @Transactional
     public List<AccountDto> getAccountsByuserId(Long userId) {
         User user = userService.get(userId);
 
@@ -99,6 +86,7 @@ public class AccountService {
             throw new AccountException(ErrorCode.MAX_ACCOUNT_PER_USER_10);
         }
     }
+
 
     private void validateDeleteAccount(User user, Account account) {
         if (!Objects.equals(user.getId(), account.getUser().getId())) {
