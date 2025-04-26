@@ -33,6 +33,8 @@ public class TransactionService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final UserService userService;
+    private final AccountService accountService;
 
     @Transactional
     public TransactionDto useBalance(Long userId, String accountNumber, Long amount) {
@@ -124,17 +126,15 @@ public class TransactionService {
 
     @Transactional
     public Transaction deposit(Long userId, String accountNumber, Long amount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.get(userId);
 
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+        Account account = accountService.getAccountByNumber(accountNumber);
 
         validateDeposit(user, account);
 
         account.deposit(amount);
 
-        return saveAndGetTransaction(TransactionType.DEPOSIT, SUCCESS, account, amount);
+        return saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount);
     }
 
     @Transactional
@@ -208,7 +208,6 @@ public class TransactionService {
         return TransferResponse.from(fromTransaction, toTransaction);
     }
 
-    @Transactional
     public void saveFailedTransferTransaction(String fromAccountNumber, String toAccountNumber, Long amount) {
         Account fromAccount = accountRepository.findByAccountNumber(fromAccountNumber)
                 .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));

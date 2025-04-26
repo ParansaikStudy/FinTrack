@@ -56,6 +56,13 @@ public class AccountService {
         return accountRepository.findById(accountId).get();
     }
 
+    @Transactional
+    public Account getAccountByNumber(String accountNumber) {
+        return accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+    }
+
+
     // TODO: 특정 계좌 담보 대출 가능한 금액 출력
     public BigDecimal getAccountCollateralRate(Long userId, Long accountId) {
         User user = userService.get(userId);
