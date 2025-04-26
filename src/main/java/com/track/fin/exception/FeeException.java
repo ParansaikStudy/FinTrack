@@ -8,9 +8,9 @@ public class FeeException extends RuntimeException {
 
     private String errorMessage;
 
-
     public FeeException(ErrorCode errorCode) {
         super(errorCode.getDescription());
         this.errorCode = errorCode;
     }
+
 }

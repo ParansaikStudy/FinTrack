@@ -28,4 +28,20 @@ public class Fee {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal discount;
+
+    public static Fee fromGradeType(GradeType gradeType) {
+        return Fee.builder()
+                .gradeType(gradeType)
+                .collateralRate(gradeType.getCollateralRate())
+                .interestRate(gradeType.getInterestRate())
+                .discount(gradeType.getDiscount())
+                .build();
+    }
+
+    public void updateGrade(GradeType newGrade) {
+        this.gradeType = newGrade;
+        this.collateralRate = newGrade.getCollateralRate();
+        this.interestRate = newGrade.getInterestRate();
+        this.discount = newGrade.getDiscount();
+    }
 }

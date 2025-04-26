@@ -19,13 +19,7 @@ public class FeeService {
 
     @Transactional
     public Fee createFeeByGrade(GradeType gradeType) {
-        Fee fee = Fee.builder()
-                .gradeType(gradeType)
-                .collateralRate(gradeType.getCollateralRate())
-                .interestRate(gradeType.getInterestRate())
-                .discount(gradeType.getDiscount())
-                .build();
-
+        Fee fee = Fee.fromGradeType(gradeType);
         return feeRepository.save(fee);
     }
 
@@ -34,20 +28,19 @@ public class FeeService {
         Fee fee = feeRepository.findById(id)
                 .orElseThrow(() -> new FeeException(ErrorCode.FEE_NOT_FOUND));
 
-        fee = Fee.builder()
-                .id(fee.getId())
-                .gradeType(newGrade)
-                .collateralRate(newGrade.getCollateralRate())
-                .interestRate(newGrade.getInterestRate())
-                .discount(newGrade.getDiscount())
-                .build();
+        fee.updateGrade(newGrade);
 
-        return feeRepository.save(fee);
+        return fee;
     }
 
     public Fee getFeeByGrade(GradeType gradeType) {
         return feeRepository.findByGradeType(gradeType)
                 .orElseThrow(() -> new IllegalArgumentException("등급에 해당하는 수수료 없음"));
+    }
+
+    public Fee getFee(Long id) {
+        return feeRepository.findById(id)
+                .orElseThrow(() -> new FeeException(ErrorCode.FEE_NOT_FOUND));
     }
 
     public List<Fee> getAllFees() {
@@ -58,4 +51,5 @@ public class FeeService {
     public void deleteFee(Long id) {
         feeRepository.deleteById(id);
     }
+
 }

@@ -20,8 +20,8 @@ public class FeeController {
         return FeeRecord.from(feeService.createFeeByGrade(gradeType));
     }
 
-    @PutMapping("/fee/{id}/{newGrade}")
-    public FeeRecord updateFee(@PathVariable Long id, @PathVariable GradeType newGrade) {
+    @PutMapping("/fee/{id}")
+    public FeeRecord updateFee(@PathVariable Long id, @RequestBody GradeType newGrade) {
         return FeeRecord.from(feeService.updateFee(id, newGrade));
     }
 
@@ -39,4 +39,5 @@ public class FeeController {
     public void deleteFee(@PathVariable Long id) {
         feeService.deleteFee(id);
     }
+
 }
