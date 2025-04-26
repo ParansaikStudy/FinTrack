@@ -1,6 +1,6 @@
 package com.track.fin.controller;
 
-import com.track.fin.record.CreateLoan;
+import com.track.fin.record.CreateLoanRecord;
 import com.track.fin.record.LoanRecord;
 import com.track.fin.service.LoanService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ public class LoanController {
     private final LoanService loanService;
 
     @PostMapping("/loan")
-    public LoanRecord createLoan(@RequestBody CreateLoan createLoan) {
+    public LoanRecord createLoan(@RequestBody CreateLoanRecord createLoan) {
         return LoanRecord.from(loanService.createLoan(createLoan));
     }
 
@@ -23,7 +23,7 @@ public class LoanController {
     }
 
     @PutMapping("/loan/{loanId}")
-    public LoanRecord updateLoan(@PathVariable Long loanId, @RequestBody CreateLoan updateLoan) {
+    public LoanRecord updateLoan(@PathVariable Long loanId, @RequestBody CreateLoanRecord updateLoan) {
         return LoanRecord.from(loanService.updateLoan(loanId, updateLoan));
     }
 
