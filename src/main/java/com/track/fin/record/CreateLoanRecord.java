@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public record CreateLoan(
+public record CreateLoanRecord(
 
         Long userId,
         Long accountId,
