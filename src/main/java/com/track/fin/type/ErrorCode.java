@@ -19,7 +19,6 @@ public enum ErrorCode {
     ACCOUNT_ALREADY_UNREGISTERED("계좌가 이미 해지되었습니다."),
     BALANCE_NOT_EMPTY("잔액이 있는 계좌는 해지할 수 없습니다."),
     MAX_ACCOUNT_PER_USER_10("사용자 최대 계좌는 10개입니다."),
-    INSUFFICIENT_INITIAL_BALANCE("최소 예치금보다 적은 금액으로 계좌를 개설할 수 없습니다."),
     INSUFFICIENT_BALANCE("잔액이 부족합니다."),
     MAX_DEPOSIT_LIMIT_EXCEEDED("입금 한도를 초과했습니다.");
 

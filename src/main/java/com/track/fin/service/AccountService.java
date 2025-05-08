@@ -9,7 +9,8 @@ import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.UserRepository;
 
 import com.track.fin.type.AccountType;
-import jakarta.transaction.Transactional;
+import com.track.fin.type.ErrorCode;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +18,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import static com.track.fin.type.ErrorCode.*;
 import static com.track.fin.type.AccountStatus.*;
+
 
 @Service
 @RequiredArgsConstructor
@@ -86,6 +87,7 @@ public class AccountService {
     }
 
     @Transactional
+
     public List<AccountDto> getAccountsByuserId(Long userId) {
         User user = userService.get(userId);
 
@@ -101,6 +103,7 @@ public class AccountService {
             throw new AccountException(MAX_ACCOUNT_PER_USER_10);
         }
     }
+
 
     private void validateDeleteAccount(User user, Account account) {
         if (!Objects.equals(user.getId(), account.getUser().getId())) {

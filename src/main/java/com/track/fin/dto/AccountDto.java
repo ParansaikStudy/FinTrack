@@ -18,5 +18,4 @@ public class AccountDto {
     private Long balance;
 
     private AccountType accountType;
-
 }

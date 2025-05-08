@@ -1,6 +1,6 @@
 package com.track.fin.domain;
 
-import com.track.fin.record.CreateLoan;
+import com.track.fin.record.CreateLoanRecord;
 import com.track.fin.type.LoanStatus;
 import com.track.fin.type.LoanType;
 import jakarta.persistence.*;
@@ -57,7 +57,7 @@ public class Loan {
         this.loanType = loanType;
     }
 
-    public static Loan from(User user, Account account, CreateLoan createLoan) {
+    public static Loan from(User user, Account account, CreateLoanRecord createLoan) {
         return Loan.builder()
                 .user(user)
                 .account(account)
@@ -68,5 +68,17 @@ public class Loan {
                 .loanType(createLoan.loanType())
                 .build();
     }
+
+    public void update(User user, Account account, CreateLoanRecord dto) {
+        this.user = user;
+        this.account = account;
+        this.balance = dto.balance();
+     //   this.loanDate = LocalDateTime.now();
+        this.delinquencyDate = dto.delinquencyDate();
+        this.loanStatus = dto.loanStatus();
+        this.loanType = dto.loanType();
+    }
+
+
 
 }
