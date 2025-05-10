@@ -4,6 +4,7 @@ import com.track.fin.dto.CancelBalance;
 import com.track.fin.dto.QueryTransactionResponse;
 import com.track.fin.dto.UseBalance;
 import com.track.fin.exception.AccountException;
+import com.track.fin.record.*;
 import com.track.fin.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,71 @@ public class TransactionController {
                     requset.getAccountNumber(),
                     requset.getAmount()
             );
+            throw e;
+        }
+    }
+
+    @PostMapping("/transaction/deposit")
+    public DepositResponse deposit(
+            @Valid @RequestBody DepositRequest request
+    ) {
+        try {
+            return DepositResponse.from(
+                    transactionService.deposit(
+                            request.userId(),
+                            request.accountNumber(),
+                            request.amount()
+                    )
+            );
+        } catch (AccountException e) {
+            log.error("Failed to deposit.");
+
+            transactionService.saveFailedDepositTransaction(
+                    request.accountNumber(),
+                    request.amount()
+            );
+            throw e;
+        }
+    }
+
+    @PostMapping("/transaction/transfer")
+    public TransferResponse transfer(
+            @Valid @RequestBody TransferRequest request
+    ) {
+        try {
+            return transactionService.transfer(
+                    request.userId(),
+                    request.fromAccountNumber(),
+                    request.toAccountNumber(),
+                    request.amount()
+            );
+        } catch (AccountException e) {
+            log.error("Failed to transfer.");
+            transactionService.saveFailedTransferTransaction(
+                    request.fromAccountNumber(),
+                    request.toAccountNumber(),
+                    request.amount()
+            );
+            throw e;
+        }
+    }
+
+
+    @PostMapping("/transaction/withdraw")
+    public WithdrawalResponse withdraw(
+            @Valid @RequestBody WithdrawalRequest request
+    ) {
+        try {
+            return WithdrawalResponse.from(
+                    transactionService.withdraw(
+                            request.userId(),
+                            request.accountNumber(),
+                            request.amount()
+                    )
+            );
+        } catch (AccountException e) {
+            log.error("Failed to withdraw.");
+            transactionService.saveFailedWithdrawTransaction(request.accountNumber(), request.amount());
             throw e;
         }
     }
