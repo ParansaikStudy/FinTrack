@@ -38,11 +38,11 @@ public class TransactionController {
     }
 
     @PostMapping("/transaction/deposit")
-    public DepositResponse deposit(
-            @Valid @RequestBody DepositRequest request
+    public DepositRecord deposit(
+            @Valid @RequestBody DepositTransactionRecord request
     ) {
         try {
-            return DepositResponse.from(
+            return DepositRecord.from(
                     transactionService.deposit(
                             request.userId(),
                             request.accountNumber(),
@@ -61,8 +61,8 @@ public class TransactionController {
     }
 
     @PostMapping("/transaction/transfer")
-    public TransferResponse transfer(
-            @Valid @RequestBody TransferRequest request
+    public TransferResponseRecord transfer(
+            @Valid @RequestBody TransferRequestRecord request
     ) {
         try {
             return transactionService.transfer(
@@ -84,11 +84,11 @@ public class TransactionController {
 
 
     @PostMapping("/transaction/withdraw")
-    public WithdrawalResponse withdraw(
-            @Valid @RequestBody WithdrawalRequest request
+    public WithdrawalRecord withdraw(
+            @Valid @RequestBody WithdrawalRequestRecord request
     ) {
         try {
-            return WithdrawalResponse.from(
+            return WithdrawalRecord.from(
                     transactionService.withdraw(
                             request.userId(),
                             request.accountNumber(),

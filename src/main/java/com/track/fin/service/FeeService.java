@@ -2,6 +2,7 @@ package com.track.fin.service;
 
 import com.track.fin.domain.Fee;
 import com.track.fin.exception.FeeException;
+import com.track.fin.record.FeeRecord;
 import com.track.fin.repository.FeeRepository;
 import com.track.fin.type.ErrorCode;
 import com.track.fin.type.GradeType;
@@ -18,17 +19,17 @@ public class FeeService {
     private final FeeRepository feeRepository;
 
     @Transactional
-    public Fee createFeeByGrade(GradeType gradeType) {
-        Fee fee = Fee.fromGradeType(gradeType);
+    public Fee createFeeByGrade(FeeRecord feeRecord) {
+        Fee fee = Fee.fromGradeType(feeRecord.gradeType());
         return feeRepository.save(fee);
     }
 
     @Transactional
-    public Fee updateFee(Long id, GradeType newGrade) {
+    public Fee updateFee(Long id, FeeRecord feeRecord) {
         Fee fee = feeRepository.findById(id)
                 .orElseThrow(() -> new FeeException(ErrorCode.FEE_NOT_FOUND));
 
-        fee.updateGrade(newGrade);
+        fee.updateGrade(feeRecord.gradeType());
 
         return fee;
     }

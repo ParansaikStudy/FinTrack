@@ -1,8 +1,6 @@
 package com.track.fin.record;
 
-import com.track.fin.domain.Transaction;
-
-public record TransferRequest(
+public record TransferRequestRecord(
         Long userId,
         String fromAccountNumber,
         String toAccountNumber,

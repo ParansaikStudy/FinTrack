@@ -7,19 +7,19 @@ import com.track.fin.exception.AccountException;
 import com.track.fin.record.AccountRecord;
 import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.UserRepository;
-
 import com.track.fin.type.AccountType;
-import com.track.fin.type.ErrorCode;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.track.fin.type.AccountStatus.ACTIVE;
+import static com.track.fin.type.AccountStatus.CLOSED;
 import static com.track.fin.type.ErrorCode.*;
-import static com.track.fin.type.AccountStatus.*;
 
 
 @Service

@@ -5,15 +5,15 @@ import com.track.fin.domain.Transaction;
 import com.track.fin.domain.User;
 import com.track.fin.dto.TransactionDto;
 import com.track.fin.exception.AccountException;
-import com.track.fin.record.TransferResponse;
+import com.track.fin.record.TransferResponseRecord;
 import com.track.fin.repository.TransactionRepository;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.TransactionResultType;
 import com.track.fin.type.TransactionType;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -160,7 +160,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransferResponse transfer(Long userId, String fromAccountNumber, String toAccountNumber, Long amount) {
+    public TransferResponseRecord transfer(Long userId, String fromAccountNumber, String toAccountNumber, Long amount) {
         User user = userService.get(userId);
         Account fromAccount = accountService.getAccountByNumber(fromAccountNumber);
         Account toAccount = accountService.getAccountByNumber(toAccountNumber);
@@ -173,7 +173,7 @@ public class TransactionService {
         Transaction fromTransaction = saveAndGetTransaction(TRANSFER, SUCCESS, fromAccount, amount);
         Transaction toTransaction = saveAndGetTransaction(TRANSFER, SUCCESS, toAccount, amount);
 
-        return TransferResponse.from(fromTransaction, toTransaction);
+        return TransferResponseRecord.from(fromTransaction, toTransaction);
     }
 
     public void saveFailedTransferTransaction(String fromAccountNumber, String toAccountNumber, Long amount) {

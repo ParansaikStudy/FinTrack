@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record LoanRecord(
+
         Long id,
         Long userId,
         Long accountId,
@@ -16,7 +17,9 @@ public record LoanRecord(
         LocalDate delinquencyDate,
         LoanStatus loanStatus,
         LoanType loanType
+
 ) {
+
     public static LoanRecord from(Loan loan) {
         return new LoanRecord(
                 loan.getId(),
@@ -29,4 +32,5 @@ public record LoanRecord(
                 loan.getLoanType()
         );
     }
+
 }

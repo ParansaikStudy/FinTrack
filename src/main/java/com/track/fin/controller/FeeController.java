@@ -10,24 +10,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("/fees")
 @RequiredArgsConstructor
 public class FeeController {
 
     private final FeeService feeService;
 
-    @PostMapping("/fee/{gradeType}")
-    public FeeRecord createFee(@PathVariable GradeType gradeType) {
-        return FeeRecord.from(feeService.createFeeByGrade(gradeType));
-    }
-
-    @PutMapping("/fee/{id}")
-    public FeeRecord updateFee(@PathVariable Long id, @RequestBody GradeType newGrade) {
-        return FeeRecord.from(feeService.updateFee(id, newGrade));
-    }
-
-    @GetMapping("/fee/{gradeType}")
-    public FeeRecord getFee(@PathVariable GradeType gradeType) {
-        return FeeRecord.from(feeService.getFeeByGrade(gradeType));
+    @PostMapping
+    public FeeRecord createFee(@RequestBody FeeRecord feeRecord) {
+        return FeeRecord.from(feeService.createFeeByGrade(feeRecord));
     }
 
     @GetMapping
@@ -35,7 +26,17 @@ public class FeeController {
         return feeService.getAllFees();
     }
 
-    @DeleteMapping("/fee/{id}")
+    @GetMapping("/{gradeType}")
+    public FeeRecord getFee(@PathVariable GradeType gradeType) {
+        return FeeRecord.from(feeService.getFeeByGrade(gradeType));
+    }
+
+    @PutMapping("/{id}")
+    public FeeRecord updateFee(@PathVariable Long id, @RequestBody FeeRecord feeRecord) {
+        return FeeRecord.from(feeService.updateFee(id, feeRecord));
+    }
+
+    @DeleteMapping("/{id}")
     public void deleteFee(@PathVariable Long id) {
         feeService.deleteFee(id);
     }

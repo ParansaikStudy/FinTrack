@@ -6,10 +6,11 @@ import com.track.fin.domain.User;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.CreateLoanRecord;
 import com.track.fin.repository.LoanRepository;
-import com.track.fin.type.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import static com.track.fin.type.ErrorCode.LOAN_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class LoanService {
     @Transactional(readOnly = true)
     public Loan getLoan(Long loanId) {
         return loanRepository.findById(loanId)
-                .orElseThrow(() -> new AccountException(ErrorCode.LOAN_NOT_FOUND));
+                .orElseThrow(() -> new AccountException(LOAN_NOT_FOUND));
     }
 
     @Transactional
