@@ -5,11 +5,10 @@ import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
 import com.track.fin.type.ErrorCode;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 import static com.track.fin.type.AccountStatus.LOCKED;
 import static com.track.fin.type.AccountType.LOANS;
@@ -41,6 +40,9 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountType accountType;
 
+    private LocalDateTime unregisteredAt;
+
+    @Setter
     @Enumerated(EnumType.STRING)
     private AccountStatus accountStatus;
 
@@ -71,6 +73,16 @@ public class Account {
             throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
         }
         this.balance -= amount;
+    }
+
+    public void close() {
+        this.accountStatus = AccountStatus.CLOSED;
+        this.unregisteredAt = LocalDateTime.now();
+    }
+
+    public void restore() {
+        this.accountStatus = AccountStatus.ACTIVE;
+        this.unregisteredAt = null;
     }
 
 }

@@ -23,7 +23,12 @@ public enum ErrorCode {
     FEE_NOT_FOUND("수수료 정보가 존재하지 않습니다."),
     INSUFFICIENT_BALANCE("잔액이 부족합니다."),
     MAX_DEPOSIT_LIMIT_EXCEEDED("입금 한도를 초과했습니다."),
-    LOAN_NOT_FOUND("대출 찾을 수 없습니다.");
+    LOAN_NOT_FOUND("대출 찾을 수 없습니다."),
+    WITHDRAW_ACCOUNT_UNMATCH("출금 계좌가 사용자와 일치하지 않습니다."),
+    WITHDRAW_ACCOUNT_INACTIVE("출금 계좌가 활성화 상태가 아닙니다."),
+    ACCOUNT_RESTORE_EXPIRED("계좌 복구 가능 기간이 지났습니다."),
+
+    ;
 
     private final String description;
 
