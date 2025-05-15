@@ -4,5 +4,8 @@ public enum LoanStatus {
 
     SUCCESS,
     FAIL,
+    ONGOING,
+    DELINQUENT,
+    REPAID,
 
 }

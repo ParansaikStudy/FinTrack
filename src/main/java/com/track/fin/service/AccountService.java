@@ -6,13 +6,13 @@ import com.track.fin.dto.AccountDto;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.AccountRecord;
 import com.track.fin.repository.AccountRepository;
-import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,7 +28,9 @@ public class AccountService {
 
     private final UserService userService;
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+    private final AutoTransferService autoTransferService;
+    private final LoanService loanService;
+    private final TransactionService transactionService;
 
     @Transactional
     public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
@@ -75,19 +77,32 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto deleteAccount(Long userId, String accountNumber) {
+    public AccountDto deleteAccount(Long userId, String closingAccountNumber, String withdrawAccountNumber) {
         User user = userService.get(userId);
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        Account closingAccount = getAccountByNumber(closingAccountNumber);
 
-        validateDeleteAccount(user, account);
-        account.afterLoan();
+        if (withdrawAccountNumber == null || withdrawAccountNumber.isBlank()) {
+            throw new AccountException(WITHDRAW_ACCOUNT_NOT_PROVIDED);
+        }
 
-        return AccountRecord.from(accountRepository.save(account));
+        Account withdrawAccount = getAccountByNumber(withdrawAccountNumber);
+
+
+        validatePendingLoanOrAutoTransfer(closingAccount);
+
+
+        validateDeleteAccount(user, closingAccount, withdrawAccount);
+
+        if (closingAccount.getBalance() > 0) {
+            transactionService.transfer(userId, closingAccountNumber, withdrawAccountNumber, closingAccount.getBalance());
+        }
+
+        closingAccount.setAccountStatus(CLOSED);
+
+        return AccountRecord.from(accountRepository.save(closingAccount));
     }
 
     @Transactional
-
     public List<AccountDto> getAccountsByuserId(Long userId) {
         User user = userService.get(userId);
 
@@ -102,17 +117,33 @@ public class AccountService {
         if (accountRepository.countByUser(user) == 10) {
             throw new AccountException(MAX_ACCOUNT_PER_USER_10);
         }
+
+        boolean hasRecentClosedAccount = accountRepository.findByUser(user).stream()
+                .anyMatch(account ->
+                        account.getAccountStatus() == CLOSED &&
+                                account.getUnregisteredAt() != null &&
+                                account.getUnregisteredAt().isAfter(LocalDateTime.now().minusMonths(1))
+                );
+
+        if (hasRecentClosedAccount) {
+            throw new AccountException(CANNOT_CREATE_ACCOUNT_DUE_TO_RECENT_CLOSURE);
+        }
     }
 
-
-    private void validateDeleteAccount(User user, Account account) {
-        if (!Objects.equals(user.getId(), account.getUser().getId())) {
+    private void validateDeleteAccount(User user, Account closingAccount, Account withdrawAccount) {
+        if (!Objects.equals(user.getId(), closingAccount.getUser().getId())) {
             throw new AccountException(USER_ACCOUNT_UNMATCH);
         }
-        if (account.getAccountStatus() == CLOSED) {
+        if (closingAccount.getAccountStatus() == CLOSED) {
             throw new AccountException(ACCOUNT_ALREADY_UNREGISTERED);
         }
-        if (account.getBalance() > 0) {
+        if (!Objects.equals(user.getId(), withdrawAccount.getUser().getId())) {
+            throw new AccountException(WITHDRAW_ACCOUNT_UNMATCH);
+        }
+        if (withdrawAccount.getAccountStatus() != ACTIVE) {
+            throw new AccountException(WITHDRAW_ACCOUNT_INACTIVE);
+        }
+        if (closingAccount.getBalance() > 0) {
             throw new AccountException(BALANCE_NOT_EMPTY);
         }
     }
@@ -120,6 +151,18 @@ public class AccountService {
     private void validateInitialBalance(Long initialBalance, AccountType accountType) {
         if (accountType.getBalance().equals(initialBalance)) {
             throw new AccountException(INSUFFICIENT_INITIAL_BALANCE);
+        }
+    }
+
+    private void validatePendingLoanOrAutoTransfer(Account account) {
+        boolean hasLoan = loanService.existsUnpaidLoanByAccount(account);
+        boolean hasAutoTransfer = autoTransferService.existsByAccount(account);
+
+        if (hasLoan) {
+            throw new AccountException(LOAN_EXISTS);
+        }
+        if (hasAutoTransfer) {
+            throw new AccountException(AUTO_TRANSFER_EXISTS);
         }
     }
 

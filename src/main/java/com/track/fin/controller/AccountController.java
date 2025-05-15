@@ -38,7 +38,8 @@ public class AccountController {
         return DeleteAccount.Response.from(
                 accountService.deleteAccount(
                         request.getUserId(),
-                        request.getAccountNumber()
+                        request.getAccountNumber(),
+                        request.getWithdrawAccountNumber()
                 )
         );
     }
@@ -61,4 +62,5 @@ public class AccountController {
             @PathVariable Long id) {
         return accountService.getAccount(id);
     }
+
 }

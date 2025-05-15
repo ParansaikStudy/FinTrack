@@ -6,7 +6,9 @@ import com.track.fin.domain.User;
 import com.track.fin.dto.TransactionDto;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.TransferResponseRecord;
+import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.TransactionRepository;
+import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.TransactionResultType;
 import com.track.fin.type.TransactionType;
@@ -15,8 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.track.fin.type.ErrorCode.*;
 import static com.track.fin.type.TransactionResultType.FAIL;
@@ -29,18 +35,22 @@ import static com.track.fin.type.TransactionType.*;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final UserService userService;
-    private final AccountService accountService;
+    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public TransactionDto useBalance(Long userId, String accountNumber, Long amount) {
-        User user = userService.get(userId);
-        Account account = accountService.getAccountByNumber(accountNumber);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
 
         validateUserBalance(user, account, amount);
         account.useBalance(amount);
 
-        return TransactionDto.fromEntity(saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount));
+        return TransactionDto.fromEntity(
+                saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount)
+        );
     }
 
     private Transaction saveAndGetTransaction(TransactionType type, TransactionResultType result, Account account, Long amount) {
@@ -56,8 +66,41 @@ public class TransactionService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public List<TransactionDto> getTransactionsByAccount(
+            String accountNumber,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            List<TransactionType> types,
+            boolean sortDesc
+    ) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+
+        List<Transaction> transactions = (types == null || types.isEmpty()) ?
+                transactionRepository.findByAccountAndTransactionDateBetween(
+                        account, startDate, endDate
+                )
+                : transactionRepository.findByAccountAndTransactionDateBetweenAndTransactionTypeIn(
+                account, startDate, endDate, types
+        );
+
+        transactions.sort((a, b) -> {
+            if (sortDesc) {
+                return b.getTransactionDate().compareTo(a.getTransactionDate());
+            } else {
+                return a.getTransactionDate().compareTo(b.getTransactionDate());
+            }
+        });
+
+        return transactions.stream()
+                .map(TransactionDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     public void saveFailedUseTransaction(String accountNumber, Long amount) {
-        Account account = accountService.getAccountByNumber(accountNumber);
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
         saveAndGetTransaction(DEPOSIT, FAIL, account, amount);
     }
 
@@ -65,7 +108,8 @@ public class TransactionService {
     public TransactionDto cancelBalance(String transactionId, String accountNumber, Long amount) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new AccountException(TRANSACTION_NOT_FOUND));
-        Account account = accountService.getAccountByNumber(accountNumber);
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
 
         validateCancelBalance(transaction, account, amount);
         account.useBalance(amount);
@@ -74,7 +118,8 @@ public class TransactionService {
     }
 
     public void saveFailedCancelTransaction(String accountNumber, Long amount) {
-        Account account = accountService.getAccountByNumber(accountNumber);
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
         saveAndGetTransaction(DEPOSIT, FAIL, account, amount);
     }
 
@@ -108,8 +153,10 @@ public class TransactionService {
 
     @Transactional
     public Transaction deposit(Long userId, String accountNumber, Long amount) {
-        User user = userService.get(userId);
-        Account account = accountService.getAccountByNumber(accountNumber);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
 
         validateDeposit(user, account);
         account.deposit(amount);
@@ -118,7 +165,8 @@ public class TransactionService {
     }
 
     public void saveFailedDepositTransaction(String accountNumber, Long amount) {
-        Account account = accountService.getAccountByNumber(accountNumber);
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
         saveAndGetTransaction(DEPOSIT, FAIL, account, amount);
     }
 
@@ -133,8 +181,10 @@ public class TransactionService {
 
     @Transactional
     public Transaction withdraw(Long userId, String accountNumber, Long amount) {
-        User user = userService.get(userId);
-        Account account = accountService.getAccountByNumber(accountNumber);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
 
         validateWithdraw(user, account, amount);
         account.withdraw(amount);
@@ -143,7 +193,8 @@ public class TransactionService {
     }
 
     public void saveFailedWithdrawTransaction(String accountNumber, Long amount) {
-        Account account = accountService.getAccountByNumber(accountNumber);
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
         saveAndGetTransaction(WITHDRAWAL, FAIL, account, amount);
     }
 
@@ -161,9 +212,12 @@ public class TransactionService {
 
     @Transactional
     public TransferResponseRecord transfer(Long userId, String fromAccountNumber, String toAccountNumber, Long amount) {
-        User user = userService.get(userId);
-        Account fromAccount = accountService.getAccountByNumber(fromAccountNumber);
-        Account toAccount = accountService.getAccountByNumber(toAccountNumber);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        Account fromAccount = accountRepository.findByAccountNumber(fromAccountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+        Account toAccount = accountRepository.findByAccountNumber(toAccountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
 
         validateTransfer(user, fromAccount, toAccount, amount);
 
@@ -177,8 +231,10 @@ public class TransactionService {
     }
 
     public void saveFailedTransferTransaction(String fromAccountNumber, String toAccountNumber, Long amount) {
-        Account fromAccount = accountService.getAccountByNumber(fromAccountNumber);
-        Account toAccount = accountService.getAccountByNumber(toAccountNumber);
+        Account fromAccount = accountRepository.findByAccountNumber(fromAccountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+        Account toAccount = accountRepository.findByAccountNumber(toAccountNumber)
+                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
         saveAndGetTransaction(TRANSFER, FAIL, fromAccount, amount);
         saveAndGetTransaction(TRANSFER, FAIL, toAccount, amount);
     }

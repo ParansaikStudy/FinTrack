@@ -2,14 +2,20 @@ package com.track.fin.controller;
 
 import com.track.fin.dto.CancelBalance;
 import com.track.fin.dto.QueryTransactionResponse;
+import com.track.fin.dto.TransactionDto;
 import com.track.fin.dto.UseBalance;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.*;
 import com.track.fin.service.TransactionService;
+import com.track.fin.type.TransactionType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -82,7 +88,6 @@ public class TransactionController {
         }
     }
 
-
     @PostMapping("/transaction/withdraw")
     public WithdrawalRecord withdraw(
             @Valid @RequestBody WithdrawalRequestRecord request
@@ -127,4 +132,23 @@ public class TransactionController {
             @PathVariable String transactionId) {
         return QueryTransactionResponse.from(transactionService.queryTransactionId(transactionId));
     }
+
+    @GetMapping("/{accountNumber}")
+    public List<TransactionDto> getTransactions(
+            @PathVariable String accountNumber,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+
+            @RequestParam(required = false) List<TransactionType> types,
+            @RequestParam(defaultValue = "true") boolean sortDesc
+    ) {
+        LocalDateTime from = startDate != null ? startDate : LocalDateTime.now().minusMonths(1);
+        LocalDateTime to = endDate != null ? endDate : LocalDateTime.now();
+
+        return transactionService.getTransactionsByAccount(accountNumber, from, to, types, sortDesc);
+    }
+
 }
