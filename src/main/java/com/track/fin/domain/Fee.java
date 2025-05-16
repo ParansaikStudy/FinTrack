@@ -2,15 +2,16 @@ package com.track.fin.domain;
 
 import com.track.fin.type.GradeType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+@Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-@Entity
 public class Fee {
 
     @Id
@@ -29,6 +30,15 @@ public class Fee {
     @Column(precision = 10, scale = 2)
     private BigDecimal discount;
 
+    @Builder
+    private Fee(Long id, GradeType gradeType, BigDecimal collateralRate, BigDecimal interestRate, BigDecimal discount) {
+        this.id = id;
+        this.gradeType = gradeType;
+        this.collateralRate = collateralRate;
+        this.interestRate = interestRate;
+        this.discount = discount;
+    }
+
     public static Fee fromGradeType(GradeType gradeType) {
         return Fee.builder()
                 .gradeType(gradeType)
@@ -44,4 +54,5 @@ public class Fee {
         this.interestRate = newGrade.getInterestRate();
         this.discount = newGrade.getDiscount();
     }
+
 }
