@@ -91,7 +91,6 @@ public class AccountService {
 
         closingAccount.close();
 
-
         return AccountRecord.from(accountRepository.save(closingAccount));
     }
 
