@@ -3,7 +3,6 @@ package com.track.fin.domain;
 import com.track.fin.exception.AccountException;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
-import com.track.fin.type.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
