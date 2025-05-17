@@ -84,11 +84,13 @@ public class AccountService {
 
         validateDeleteAccount(user, closingAccount, withdrawAccount);
 
+        // 여기서 검증할 필요가 있나?
         if (closingAccount.getBalance() > 0) {
             transactionService.transfer(userId, accountNumber, withdrawAccountNumber, closingAccount.getBalance());
         }
 
-        closingAccount.setAccountStatus(CLOSED);
+        closingAccount.close();
+
 
         return AccountRecord.from(accountRepository.save(closingAccount));
     }

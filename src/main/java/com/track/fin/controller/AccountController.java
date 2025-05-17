@@ -63,12 +63,12 @@ public class AccountController {
         return accountService.getAccount(id);
     }
 
-    @PostMapping("/account/restore")
-    public CreateAccount.Response restoreAccount(@RequestBody @Valid DeleteAccount.Request request) {
-        AccountDto restored = accountService.restoreAccount(
-                request.getUserId(),
-                request.getAccountNumber()
-        );
+    @PostMapping("/accounts/{accountNumber}/restore")
+    public CreateAccount.Response restoreAccount(
+            @PathVariable String accountNumber,
+            @RequestParam Long userId
+    ) {
+        AccountDto restored = accountService.restoreAccount(userId, accountNumber);
         return CreateAccount.Response.from(restored);
     }
 

@@ -10,8 +10,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+import static com.track.fin.type.AccountStatus.CLOSED;
 import static com.track.fin.type.AccountStatus.LOCKED;
 import static com.track.fin.type.AccountType.LOANS;
+import static com.track.fin.type.ErrorCode.AMOUNT_EXCEED_BALANCE;
 
 @Getter
 @NoArgsConstructor
@@ -52,7 +54,7 @@ public class Account {
             return;
         }
         if (amount > balance) {
-            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+            throw new AccountException(AMOUNT_EXCEED_BALANCE);
         }
         balance -= amount;
     }
@@ -70,13 +72,13 @@ public class Account {
 
     public void withdraw(Long amount) {
         if (this.balance < amount) {
-            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+            throw new AccountException(AMOUNT_EXCEED_BALANCE);
         }
         this.balance -= amount;
     }
 
     public void close() {
-        this.accountStatus = AccountStatus.CLOSED;
+        this.accountStatus = CLOSED;
         this.unregisteredAt = LocalDateTime.now();
     }
 
