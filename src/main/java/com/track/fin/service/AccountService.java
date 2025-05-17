@@ -87,10 +87,7 @@ public class AccountService {
 
         Account withdrawAccount = getAccountByNumber(withdrawAccountNumber);
 
-
         validatePendingLoanOrAutoTransfer(closingAccount);
-
-
         validateDeleteAccount(user, closingAccount, withdrawAccount);
 
         if (closingAccount.getBalance() > 0) {
@@ -98,6 +95,7 @@ public class AccountService {
         }
 
         closingAccount.setAccountStatus(CLOSED);
+        closingAccount.close();
 
         return AccountRecord.from(accountRepository.save(closingAccount));
     }
