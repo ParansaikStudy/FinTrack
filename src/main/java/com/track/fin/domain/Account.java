@@ -7,6 +7,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+
 import java.time.LocalDateTime;
 
 import static com.track.fin.type.AccountStatus.CLOSED;
@@ -14,12 +20,9 @@ import static com.track.fin.type.AccountStatus.LOCKED;
 import static com.track.fin.type.AccountType.LOANS;
 import static com.track.fin.type.ErrorCode.AMOUNT_EXCEED_BALANCE;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Entity
-@EntityListeners(AuditingEntityListener.class)
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Account {
 
     @Id
@@ -58,8 +61,6 @@ public class Account {
         balance -= amount;
     }
 
-    // TODO: 사용자 생성 시 기본 회원 등급은 BRONZE
-
     public void afterLoan() {
         accountType = LOANS;
         accountStatus = LOCKED;
@@ -84,6 +85,18 @@ public class Account {
     public void restore() {
         this.accountStatus = AccountStatus.ACTIVE;
         this.unregisteredAt = null;
+
+    @Builder
+    private Account(Long id, User user, String accountNumber, Long balance, Long minBalance, Boolean autoTransfer, AccountType accountType, AccountStatus accountStatus) {
+        this.id = id;
+        this.user = user;
+        this.accountNumber = accountNumber;
+        this.balance = balance;
+        this.minBalance = minBalance;
+        this.autoTransfer = autoTransfer;
+        this.accountType = accountType;
+        this.accountStatus = accountStatus;
+
     }
 
 }

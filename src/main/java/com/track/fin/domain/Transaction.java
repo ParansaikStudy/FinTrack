@@ -4,19 +4,17 @@ import com.track.fin.type.TransactionMethodType;
 import com.track.fin.type.TransactionResultType;
 import com.track.fin.type.TransactionType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Entity
-@EntityListeners(AuditingEntityListener.class)
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Transaction {
 
     @Id
@@ -46,4 +44,18 @@ public class Transaction {
 
     private String memo;
 
+    @Builder
+    private Transaction(String id, Account account, TransactionType transactionType, TransactionResultType transactionResultType, TransactionMethodType transactionMethodType, LocalDateTime transactionDate, Long amount, Long balanceSnapshot, Long fee, String memo) {
+        this.id = id;
+        this.account = account;
+        this.transactionType = transactionType;
+        this.transactionResultType = transactionResultType;
+        this.transactionMethodType = transactionMethodType;
+        this.transactionDate = transactionDate;
+        this.amount = amount;
+        this.balanceSnapshot = balanceSnapshot;
+        this.fee = fee;
+        this.memo = memo;
+    }
+    
 }

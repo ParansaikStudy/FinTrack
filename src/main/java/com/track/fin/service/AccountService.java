@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.track.fin.type.AccountStatus.ACTIVE;
 import static com.track.fin.type.AccountStatus.CLOSED;
 import static com.track.fin.type.ErrorCode.*;
 
@@ -40,13 +39,14 @@ public class AccountService {
         validateInitialBalance(initialBalance, accountType);
 
         String newAccountNumber = generateUniqueAccountNumber();
-        Account account = accountRepository.save(Account.builder()
+        Account account = null;
+                /*accountRepository.save(Account.builder()
                 .user(user)
                 .accountStatus(ACTIVE)
                 .accountNumber(newAccountNumber)
                 .balance(initialBalance)
                 .accountType(accountType)
-                .build());
+                .build());*/
 
         return AccountRecord.from(account);
     }
