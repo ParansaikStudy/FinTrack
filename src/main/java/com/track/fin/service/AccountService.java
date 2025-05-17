@@ -116,16 +116,20 @@ public class AccountService {
             throw new AccountException(MAX_ACCOUNT_PER_USER_10);
         }
 
-        boolean hasRecentClosedAccount = accountRepository.findByUser(user).stream()
-                .anyMatch(account ->
-                        account.getAccountStatus() == CLOSED &&
-                                account.getUnregisteredAt() != null &&
-                                account.getUnregisteredAt().isAfter(LocalDateTime.now().minusMonths(1))
-                );
-
-        if (hasRecentClosedAccount) {
+        if (hasClosedAccountWithinLastMonth(user)) {
             throw new AccountException(CANNOT_CREATE_ACCOUNT_DUE_TO_RECENT_CLOSURE);
         }
+    }
+
+    private boolean hasClosedAccountWithinLastMonth(User user) {
+        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
+
+        return accountRepository.findByUser(user).stream()
+                .filter(account -> account.getAccountStatus() == CLOSED)
+                .anyMatch(account -> {
+                    LocalDateTime closedAt = account.getUnregisteredAt();
+                    return closedAt != null && closedAt.isAfter(oneMonthAgo);
+                });
     }
 
     private void validateDeleteAccount(User user, Account closingAccount, Account withdrawAccount) {
