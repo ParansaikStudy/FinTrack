@@ -1,5 +1,6 @@
 package com.track.fin.controller;
 
+import com.track.fin.domain.Transaction;
 import com.track.fin.dto.CancelBalance;
 import com.track.fin.dto.QueryTransactionResponse;
 import com.track.fin.dto.TransactionDto;
@@ -107,18 +108,18 @@ public class TransactionController {
         }
     }
 
-    @PostMapping("transaction/cancel")
-    public CancelBalance.Response cancelBalance(
+    @PostMapping("/transaction/cancel")
+    public TransferResponseRecord cancelBalance(
             @Valid @RequestBody CancelBalance.Request request
     ) {
         try {
-            return CancelBalance.Response.from(
-                    transactionService.cancelBalance(String.valueOf(request.getTransactionId()),
-                            request.getAccountNumber(), request.getAmount())
+            return transactionService.cancelBalance(
+                    String.valueOf(request.getTransactionId()),
+                    request.getAccountNumber(),
+                    request.getAmount()
             );
         } catch (AccountException e) {
-            log.error("Failed to use balance. ");
-
+            log.error("Cancel failed", e);
             transactionService.saveFailedCancelTransaction(
                     request.getAccountNumber(),
                     request.getAmount()
@@ -128,27 +129,9 @@ public class TransactionController {
     }
 
     @GetMapping("/transaction/{transactionId}")
-    public QueryTransactionResponse queryTransaction(
+    public TransferResponseRecord queryTransaction(
             @PathVariable String transactionId) {
-        return QueryTransactionResponse.from(transactionService.queryTransactionId(transactionId));
-    }
-
-    @GetMapping("/{accountNumber}")
-    public List<TransactionDto> getTransactions(
-            @PathVariable String accountNumber,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-
-            @RequestParam(required = false) List<TransactionType> types,
-            @RequestParam(defaultValue = "true") boolean sortDesc
-    ) {
-        LocalDateTime from = startDate != null ? startDate : LocalDateTime.now().minusMonths(1);
-        LocalDateTime to = endDate != null ? endDate : LocalDateTime.now();
-
-        return transactionService.getTransactionsByAccount(accountNumber, from, to, types, sortDesc);
+        return transactionService.queryTransactionId(transactionId);
     }
 
 }

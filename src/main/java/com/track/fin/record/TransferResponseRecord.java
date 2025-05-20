@@ -28,4 +28,16 @@ public record TransferResponseRecord(
         );
     }
 
+    public static TransferResponseRecord from(Transaction transaction) {
+        return new TransferResponseRecord(
+                transaction.getId(),
+                transaction.getAccount().getAccountNumber(),
+                null,
+                transaction.getAmount(),
+                transaction.getBalanceSnapshot(),
+                null,
+                transaction.getTransactionDate()
+        );
+    }
+
 }

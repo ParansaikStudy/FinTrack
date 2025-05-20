@@ -5,11 +5,15 @@ import com.track.fin.dto.AccountDto;
 import com.track.fin.dto.AccountInfo;
 import com.track.fin.dto.CreateAccount;
 import com.track.fin.dto.DeleteAccount;
+import com.track.fin.record.TransferResponseRecord;
 import com.track.fin.service.AccountService;
+import com.track.fin.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +22,7 @@ import java.util.stream.Collectors;
 public class AccountController {
 
     private final AccountService accountService;
+    private final TransactionService transactionService;
 
     @PostMapping("/account")
     public CreateAccount.Response createAccount(
@@ -61,6 +66,21 @@ public class AccountController {
     public Account getAccount(
             @PathVariable Long id) {
         return accountService.getAccount(id);
+    }
+
+    @GetMapping("/{accountNumber}/transactions")
+    public List<TransferResponseRecord> getTransferTransactions(
+            @PathVariable String accountNumber,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(defaultValue = "true") boolean sortDesc
+    ) {
+        return transactionService.getTransferTransactionsByAccount(
+                accountNumber,
+                startDate,
+                endDate,
+                sortDesc
+        );
     }
 
 }

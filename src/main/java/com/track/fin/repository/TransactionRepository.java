@@ -31,4 +31,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             LocalDateTime endDate
     );
 
+    List<Transaction> findByAccountAndTransactionTypeAndTransactionDateBetween(
+            Account account,
+            TransactionType transactionType,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
+
 }

@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static com.track.fin.type.ErrorCode.*;
 import static com.track.fin.type.TransactionResultType.FAIL;
@@ -67,35 +66,58 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<TransactionDto> getTransactionsByAccount(
+    public List<TransferResponseRecord> getTransferTransactionsByAccount(
             String accountNumber,
             LocalDateTime startDate,
             LocalDateTime endDate,
-            List<TransactionType> types,
             boolean sortDesc
     ) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
+        Account account = getAccountByNumber(accountNumber);
+        List<Transaction> transfers = getTransferTransactions(account, startDate, endDate);
+        List<TransferResponseRecord> results = convertToTransferRecords(transfers, accountNumber);
+        sortTransferRecords(results, sortDesc);
+        return results;
+    }
+
+    private Account getAccountByNumber(String accountNumber) {
+        return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+    }
 
-        List<Transaction> transactions = (types == null || types.isEmpty()) ?
-                transactionRepository.findByAccountAndTransactionDateBetween(
-                        account, startDate, endDate
-                )
-                : transactionRepository.findByAccountAndTransactionDateBetweenAndTransactionTypeIn(
-                account, startDate, endDate, types
+    private List<Transaction> getTransferTransactions(Account account, LocalDateTime start, LocalDateTime end) {
+        return transactionRepository.findByAccountAndTransactionTypeAndTransactionDateBetween(
+                account, TransactionType.TRANSFER, start, end
         );
+    }
 
-        transactions.sort((a, b) -> {
-            if (sortDesc) {
-                return b.getTransactionDate().compareTo(a.getTransactionDate());
-            } else {
-                return a.getTransactionDate().compareTo(b.getTransactionDate());
+    private List<TransferResponseRecord> convertToTransferRecords(List<Transaction> transactions, String accountNumber) {
+        List<TransferResponseRecord> result = new ArrayList<>();
+
+        for (int i = 0; i < transactions.size() - 1; i++) {
+            Transaction t1 = transactions.get(i);
+            Transaction t2 = transactions.get(i + 1);
+
+            if (isValidTransferPair(t1, t2)) {
+                Transaction from = t1.getAccount().getAccountNumber().equals(accountNumber) ? t1 : t2;
+                Transaction to = from == t1 ? t2 : t1;
+
+                result.add(TransferResponseRecord.from(from, to));
+                i++;
             }
-        });
+        }
 
-        return transactions.stream()
-                .map(TransactionDto::fromEntity)
-                .collect(Collectors.toList());
+        return result;
+    }
+
+    private boolean isValidTransferPair(Transaction t1, Transaction t2) {
+        return !t1.getAccount().getAccountNumber().equals(t2.getAccount().getAccountNumber()) &&
+                Objects.equals(t1.getAmount(), t2.getAmount());
+    }
+
+    private void sortTransferRecords(List<TransferResponseRecord> list, boolean sortDesc) {
+        list.sort((a, b) -> sortDesc
+                ? b.transactionDate().compareTo(a.transactionDate())
+                : a.transactionDate().compareTo(b.transactionDate()));
     }
 
     public void saveFailedUseTransaction(String accountNumber, Long amount) {
@@ -105,7 +127,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransactionDto cancelBalance(String transactionId, String accountNumber, Long amount) {
+    public TransferResponseRecord cancelBalance(String transactionId, String accountNumber, Long amount) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new AccountException(TRANSACTION_NOT_FOUND));
         Account account = accountRepository.findByAccountNumber(accountNumber)
@@ -114,7 +136,8 @@ public class TransactionService {
         validateCancelBalance(transaction, account, amount);
         account.useBalance(amount);
 
-        return TransactionDto.fromEntity(saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount));
+        Transaction newTransaction = saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount);
+        return TransferResponseRecord.from(newTransaction);
     }
 
     public void saveFailedCancelTransaction(String accountNumber, Long amount) {
@@ -123,12 +146,12 @@ public class TransactionService {
         saveAndGetTransaction(DEPOSIT, FAIL, account, amount);
     }
 
-    public TransactionDto queryTransactionId(String transactionId) {
-        return TransactionDto.fromEntity(
-                transactionRepository.findById(transactionId)
-                        .orElseThrow(() -> new AccountException(TRANSACTION_NOT_FOUND))
-        );
+    public TransferResponseRecord queryTransactionId(String transactionId) {
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new AccountException(TRANSACTION_NOT_FOUND));
+        return TransferResponseRecord.from(transaction);
     }
+
 
     private void validateCancelBalance(Transaction transaction, Account account, Long amount) {
         if (!Objects.equals(transaction.getAccount().getId(), account.getId())) {
