@@ -176,4 +176,11 @@ public class AccountService {
         return String.valueOf(1000000000L + Math.random() * 9000000000L);
     }
 
+    @Transactional(readOnly = true)
+    public List<Account> getActiveAccounts(Long userId) {
+        User user = userService.get(userId);
+        return accountRepository.findByUserAndAccountStatus(user, ACTIVE);
+    }
+
+
 }

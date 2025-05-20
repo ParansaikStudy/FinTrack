@@ -83,4 +83,18 @@ public class AccountController {
         );
     }
 
+    @GetMapping("/accounts/active")
+    public List<AccountInfo> getActiveAccounts(
+            @RequestParam("user_id") Long userId
+    ) {
+        return accountService.getActiveAccounts(userId).stream()
+                .map(account -> AccountInfo.builder()
+                        .accountNumber(account.getAccountNumber())
+                        .balance(account.getBalance())
+                        .accountStatus(account.getAccountStatus())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+
 }
