@@ -45,7 +45,9 @@ public class Account {
     @Setter
     private AccountStatus accountStatus;
 
+    private LocalDateTime registerdAt;
     private LocalDateTime unregisteredAt;
+
 
     public void useBalance(Long amount) {
         if (accountStatus == LOCKED) {

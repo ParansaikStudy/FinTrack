@@ -182,5 +182,4 @@ public class AccountService {
         return accountRepository.findByUserAndAccountStatus(user, ACTIVE);
     }
 
-
 }
