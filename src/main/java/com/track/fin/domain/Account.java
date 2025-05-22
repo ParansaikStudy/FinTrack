@@ -15,8 +15,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-import static com.track.fin.type.AccountStatus.CLOSED;
-import static com.track.fin.type.AccountStatus.LOCKED;
+import static com.track.fin.type.AccountStatus.*;
 import static com.track.fin.type.AccountType.LOANS;
 import static com.track.fin.type.ErrorCode.AMOUNT_EXCEED_BALANCE;
 
@@ -50,9 +49,16 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountStatus accountStatus;
 
+    private Long lockedAmount = 0L;
+
     public void useBalance(Long amount) {
         if (accountStatus == LOCKED) {
-            // TODO: 담보 받은 금액 외에 사용 가능
+            Long availableBalance = balance - lockedAmount;
+
+            if (availableBalance < amount) {
+                throw new AccountException(AMOUNT_EXCEED_BALANCE);
+            }
+            balance -= amount;
             return;
         }
         if (amount > balance) {
@@ -64,6 +70,8 @@ public class Account {
     public void afterLoan() {
         accountType = LOANS;
         accountStatus = LOCKED;
+        // 대출 생성시 추가 예정
+//       lockedAmount = collateralAmount;
     }
 
     public void deposit(Long amount) {
@@ -83,8 +91,9 @@ public class Account {
     }
 
     public void restore() {
-        this.accountStatus = AccountStatus.ACTIVE;
+        this.accountStatus = ACTIVE;
         this.unregisteredAt = null;
+    }
 
     @Builder
     private Account(Long id, User user, String accountNumber, Long balance, Long minBalance, Boolean autoTransfer, AccountType accountType, AccountStatus accountStatus) {
@@ -98,5 +107,4 @@ public class Account {
         this.accountStatus = accountStatus;
 
     }
-
 }

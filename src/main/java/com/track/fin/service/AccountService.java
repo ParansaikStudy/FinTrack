@@ -19,8 +19,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.track.fin.type.AccountStatus.CLOSED;
+import static com.track.fin.type.AccountStatus.ACTIVE;
 import static com.track.fin.type.ErrorCode.*;
-
 
 @Service
 @RequiredArgsConstructor
@@ -84,13 +84,9 @@ public class AccountService {
 
         validateDeleteAccount(user, closingAccount, withdrawAccount);
 
-        // 여기서 검증할 필요가 있나?
-        if (closingAccount.getBalance() > 0) {
-            transactionService.transfer(userId, accountNumber, withdrawAccountNumber, closingAccount.getBalance());
-        }
+        transactionService.transfer(userId, accountNumber, withdrawAccountNumber, closingAccount.getBalance());
 
         closingAccount.close();
-        closingAccount.setAccountStatus(CLOSED);
 
         return AccountRecord.from(accountRepository.save(closingAccount));
     }
