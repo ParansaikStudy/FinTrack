@@ -9,6 +9,7 @@ import com.track.fin.record.AccountRecord;
 import com.track.fin.record.TransferResponseRecord;
 import com.track.fin.service.AccountService;
 import com.track.fin.service.TransactionService;
+import com.track.fin.type.AccountType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,28 +28,12 @@ public class AccountController {
     private final TransactionService transactionService;
 
     @PostMapping("/account")
-    public CreateAccount.Response createAccount(
-            @RequestBody @Valid CreateAccount.Request request
+    public AccountRecord createAccount(
+            @RequestParam Long userId,
+            @RequestParam Long initialBalance,
+            @RequestParam AccountType accountType
     ) {
-        AccountDto accountDto = accountService.createAccount(
-                request.getUserId(),
-                request.getInitialBalance(),
-                request.getAccountType()
-        );
-        return CreateAccount.Response.from(accountDto);
-    }
-
-    @DeleteMapping("/account")
-    public DeleteAccount.Response deleteAccount(
-            @RequestBody @Valid DeleteAccount.Request request
-    ) {
-        return DeleteAccount.Response.from(
-                accountService.deleteAccount(
-                        request.getUserId(),
-                        request.getAccountNumber(),
-                        request.getWithdrawAccountNumber()
-                )
-        );
+        return accountService.createAccount(userId, initialBalance, accountType);
     }
 
     @GetMapping("/accounts")
@@ -74,7 +59,16 @@ public class AccountController {
         return accountService.getAccount(id);
     }
 
-
+    @DeleteMapping("/account")
+    public AccountRecord deleteAccount(
+            @RequestBody @Valid DeleteAccount.Request request
+    ) {
+        return accountService.deleteAccount(
+                request.getUserId(),
+                request.getAccountNumber(),
+                request.getWithdrawAccountNumber()
+        );
+    }
 
     @GetMapping("/{accountNumber}/transactions")
     public List<TransferResponseRecord> getTransferTransactions(

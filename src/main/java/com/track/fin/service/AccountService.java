@@ -8,6 +8,7 @@ import com.track.fin.record.AccountRecord;
 import com.track.fin.repository.AccountRepository;
 import com.track.fin.type.AccountType;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,9 @@ import static com.track.fin.type.ErrorCode.*;
 @RequiredArgsConstructor
 public class AccountService {
 
+    private static final long ACCOUNT_NUMBER_BASE = 1_000_000_000L;
+    private static final long ACCOUNT_NUMBER_RANGE = 9_000_000_000L;
+
     private final UserService userService;
     private final AccountRepository accountRepository;
     private final AutoTransferService autoTransferService;
@@ -33,7 +37,7 @@ public class AccountService {
     private final TransactionService transactionService;
 
     @Transactional
-    public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
+    public AccountRecord createAccount(Long userId, Long initialBalance, AccountType accountType) {
         User user = userService.get(userId);
 
         validateCreateAccount(user);
@@ -77,7 +81,7 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto deleteAccount(Long userId, String closingAccountNumber, String withdrawAccountNumber) {
+    public AccountRecord deleteAccount(Long userId, String closingAccountNumber, String withdrawAccountNumber) {
         User user = userService.get(userId);
         Account closingAccount = getAccountByNumber(closingAccountNumber);
 
@@ -95,20 +99,8 @@ public class AccountService {
         }
 
         closingAccount.setAccountStatus(CLOSED);
-        closingAccount.close();
 
         return AccountRecord.from(accountRepository.save(closingAccount));
-    }
-
-    @Transactional
-    public List<AccountDto> getAccountsByuserId(Long userId) {
-        User user = userService.get(userId);
-
-        List<Account> accounts = accountRepository.findByUser(user);
-
-        return accounts.stream()
-                .map(AccountRecord::from)
-                .collect(Collectors.toList());
     }
 
     private void validateCreateAccount(User user) {
@@ -173,7 +165,8 @@ public class AccountService {
     }
 
     private String generateUniqueAccountNumber() {
-        return String.valueOf(1000000000L + Math.random() * 9000000000L);
+        long randomNumber = (long) (Math.random() * ACCOUNT_NUMBER_RANGE);
+        return String.valueOf(ACCOUNT_NUMBER_BASE + randomNumber);
     }
 
     @Transactional(readOnly = true)
