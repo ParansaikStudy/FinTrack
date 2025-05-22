@@ -1,6 +1,7 @@
 package com.track.fin.record;
 
 import com.track.fin.domain.Account;
+import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ public record AccountRecord(
         String accountNumber,
         Long balance,
         AccountType accountType,
+        AccountStatus accountStatus,         // ✅ 추가
         LocalDateTime registeredAt,
         LocalDateTime unregisteredAt
 
@@ -22,6 +24,7 @@ public record AccountRecord(
                 account.getAccountNumber(),
                 account.getBalance(),
                 account.getAccountType(),
+                account.getAccountStatus(),
                 account.getRegisterdAt(),
                 account.getUnregisteredAt()
         );

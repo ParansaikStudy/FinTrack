@@ -27,7 +27,7 @@ public class AccountController {
     private final AccountService accountService;
     private final TransactionService transactionService;
 
-    @PostMapping("/account")
+    @PostMapping("/accounts")
     public AccountRecord createAccount(
             @RequestParam Long userId,
             @RequestParam Long initialBalance,
@@ -41,25 +41,17 @@ public class AccountController {
             @RequestParam("userId") Long userId
     ) {
         return accountService.getAccounts(userId).stream()
-                .map(account -> new AccountRecord(
-                        account.getUser().getId(),
-                        account.getAccountNumber(),
-                        account.getBalance(),
-                        account.getAccountType(),
-                        account.getRegisterdAt(),
-                        account.getUnregisteredAt()
-                ))
-                .collect(Collectors.toList());
+                .map(AccountRecord::from)
+                .toList();
     }
 
-
-    @GetMapping("/account/{id}")
+    @GetMapping("/accounts/{id}")
     public Account getAccount(
             @PathVariable Long id) {
         return accountService.getAccount(id);
     }
 
-    @DeleteMapping("/account")
+    @DeleteMapping("/accounts")
     public AccountRecord deleteAccount(
             @RequestBody @Valid DeleteAccount.Request request
     ) {
@@ -70,7 +62,7 @@ public class AccountController {
         );
     }
 
-    @GetMapping("/{accountNumber}/transactions")
+    @GetMapping("accounts/{accountNumber}/transactions")
     public List<TransferResponseRecord> getTransferTransactions(
             @PathVariable String accountNumber,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -86,22 +78,18 @@ public class AccountController {
     }
 
     @GetMapping("/accounts/active")
-    public List<AccountInfo> getActiveAccounts(
-            @RequestParam("user_id") Long userId
+    public List<AccountRecord> getActiveAccounts(
+            @RequestParam("userId") Long userId
     ) {
         return accountService.getActiveAccounts(userId).stream()
-                .map(account -> AccountInfo.builder()
-                        .accountNumber(account.getAccountNumber())
-                        .balance(account.getBalance())
-                        .accountStatus(account.getAccountStatus())
-                        .build())
-                .collect(Collectors.toList());
+                .map(AccountRecord::from)
+                .toList();
     }
 
-    @GetMapping("/{accountId}/collateral")
+    @GetMapping("accounts/{accountId}/collateral")
     public BigDecimal getCollateralRate(
             @PathVariable Long accountId,
-            @RequestParam("user_id") Long userId
+            @RequestParam("userId") Long userId
     ) {
         return accountService.getAccountCollateralRate(userId, accountId);
     }
