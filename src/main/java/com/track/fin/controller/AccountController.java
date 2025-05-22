@@ -8,6 +8,7 @@ import com.track.fin.dto.DeleteAccount;
 import com.track.fin.record.AccountRecord;
 import com.track.fin.record.TransferResponseRecord;
 import com.track.fin.service.AccountService;
+import com.track.fin.service.AutoTransferService;
 import com.track.fin.service.TransactionService;
 import com.track.fin.type.AccountType;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ public class AccountController {
 
     private final AccountService accountService;
     private final TransactionService transactionService;
+    private final AutoTransferService autoTransferService;
 
     @PostMapping("/accounts")
     public AccountRecord createAccount(
@@ -92,6 +94,16 @@ public class AccountController {
             @RequestParam("userId") Long userId
     ) {
         return accountService.getAccountCollateralRate(userId, accountId);
+    }
+
+    @GetMapping("/{accountNumber}/auto-transfer")
+    public boolean isAutoTransferRegistered(@PathVariable String accountNumber) {
+        return autoTransferService.isAutoTransferRegistered(accountNumber);
+    }
+
+    @GetMapping("/{accountNumber}/auto-transfer/validate")
+    public void validateAutoTransferNotRegistered(@PathVariable String accountNumber) {
+        autoTransferService.validateAutoTransferNotRegistered(accountNumber);
     }
 
 }
