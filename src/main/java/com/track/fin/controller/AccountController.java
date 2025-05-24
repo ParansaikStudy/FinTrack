@@ -64,7 +64,7 @@ public class AccountController {
         );
     }
 
-    @GetMapping("accounts/{accountNumber}/transactions")
+    @GetMapping("/accounts/{accountNumber}/transactions")
     public List<TransferResponseRecord> getTransferTransactions(
             @PathVariable String accountNumber,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -88,7 +88,7 @@ public class AccountController {
                 .toList();
     }
 
-    @GetMapping("accounts/{accountId}/collateral")
+    @GetMapping("/accounts/{accountId}/collateral")
     public BigDecimal getCollateralRate(
             @PathVariable Long accountId,
             @RequestParam("userId") Long userId
@@ -96,12 +96,12 @@ public class AccountController {
         return accountService.getAccountCollateralRate(userId, accountId);
     }
 
-    @GetMapping("accounts/{accountNumber}/auto-transfer")
+    @GetMapping("/accounts/{accountNumber}/auto-transfer")
     public boolean isAutoTransferRegistered(@PathVariable String accountNumber) {
         return autoTransferService.isAutoTransferRegistered(accountNumber);
     }
 
-    @GetMapping("accounts/{accountNumber}/auto-transfer/validate")
+    @GetMapping("/accounts/{accountNumber}/auto-transfer/validate")
     public void validateAutoTransferNotRegistered(@PathVariable String accountNumber) {
         autoTransferService.validateAutoTransferNotRegistered(accountNumber);
     }
