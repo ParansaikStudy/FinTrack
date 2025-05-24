@@ -1,15 +1,22 @@
 package com.track.fin.controller;
 
+import com.track.fin.domain.Transaction;
 import com.track.fin.dto.CancelBalance;
 import com.track.fin.dto.QueryTransactionResponse;
+import com.track.fin.dto.TransactionDto;
 import com.track.fin.dto.UseBalance;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.*;
 import com.track.fin.service.TransactionService;
+import com.track.fin.type.TransactionType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -82,7 +89,6 @@ public class TransactionController {
         }
     }
 
-
     @PostMapping("/transaction/withdraw")
     public WithdrawalRecord withdraw(
             @Valid @RequestBody WithdrawalRequestRecord request
@@ -102,18 +108,18 @@ public class TransactionController {
         }
     }
 
-    @PostMapping("transaction/cancel")
-    public CancelBalance.Response cancelBalance(
+    @PostMapping("/transaction/cancel")
+    public TransferResponseRecord cancelBalance(
             @Valid @RequestBody CancelBalance.Request request
     ) {
         try {
-            return CancelBalance.Response.from(
-                    transactionService.cancelBalance(String.valueOf(request.getTransactionId()),
-                            request.getAccountNumber(), request.getAmount())
+            return transactionService.cancelBalance(
+                    String.valueOf(request.getTransactionId()),
+                    request.getAccountNumber(),
+                    request.getAmount()
             );
         } catch (AccountException e) {
-            log.error("Failed to use balance. ");
-
+            log.error("Cancel failed", e);
             transactionService.saveFailedCancelTransaction(
                     request.getAccountNumber(),
                     request.getAmount()
@@ -123,8 +129,9 @@ public class TransactionController {
     }
 
     @GetMapping("/transaction/{transactionId}")
-    public QueryTransactionResponse queryTransaction(
+    public TransferResponseRecord queryTransaction(
             @PathVariable String transactionId) {
-        return QueryTransactionResponse.from(transactionService.queryTransactionId(transactionId));
+        return transactionService.queryTransactionId(transactionId);
     }
+
 }

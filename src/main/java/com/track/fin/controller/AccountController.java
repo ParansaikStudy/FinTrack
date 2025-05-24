@@ -5,11 +5,19 @@ import com.track.fin.dto.AccountDto;
 import com.track.fin.dto.AccountInfo;
 import com.track.fin.dto.CreateAccount;
 import com.track.fin.dto.DeleteAccount;
+import com.track.fin.record.AccountRecord;
+import com.track.fin.record.TransferResponseRecord;
 import com.track.fin.service.AccountService;
+import com.track.fin.service.AutoTransferService;
+import com.track.fin.service.TransactionService;
+import com.track.fin.type.AccountType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,22 +26,50 @@ import java.util.stream.Collectors;
 public class AccountController {
 
     private final AccountService accountService;
+    private final TransactionService transactionService;
+    private final AutoTransferService autoTransferService;
 
-    @PostMapping("/account")
-    public CreateAccount.Response createAccount(
-            @RequestBody @Valid CreateAccount.Request request
+    @PostMapping("/accounts")
+    public AccountRecord createAccount(
+            @RequestParam Long userId,
+            @RequestParam Long initialBalance,
+            @RequestParam AccountType accountType
     ) {
-        AccountDto accountDto = accountService.createAccount(
-                request.getUserId(),
-                request.getInitialBalance(),
-                request.getAccountType()
-        );
-        return CreateAccount.Response.from(accountDto);
+        return accountService.createAccount(userId, initialBalance, accountType);
     }
 
-    @DeleteMapping("/account")
-    public DeleteAccount.Response deleteAccount(
+    @GetMapping("/accounts")
+    public List<AccountRecord> getAccountsByUserId(
+            @RequestParam("userId") Long userId
+    ) {
+        return accountService.getAccounts(userId).stream()
+                .map(AccountRecord::from)
+                .toList();
+    }
+
+    @GetMapping("/accounts/{id}")
+    public Account getAccount(
+            @PathVariable Long id) {
+        return accountService.getAccount(id);
+    }
+
+    @DeleteMapping("/accounts")
+    public AccountRecord deleteAccount(
             @RequestBody @Valid DeleteAccount.Request request
+    ) {
+        return accountService.deleteAccount(
+                request.getUserId(),
+                request.getAccountNumber(),
+                request.getWithdrawAccountNumber()
+        );
+    }
+
+    @GetMapping("/accounts/{accountNumber}/transactions")
+    public List<TransferResponseRecord> getTransferTransactions(
+            @PathVariable String accountNumber,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(defaultValue = "true") boolean sortDesc
     ) {
         return DeleteAccount.Response.from(
                 accountService.deleteAccount(
@@ -44,25 +80,33 @@ public class AccountController {
         );
     }
 
-    @GetMapping("/account")
-    public List<AccountInfo> getAccountsByUserId(
-            @RequestParam("user_id") Long userId
+    @GetMapping("/accounts/active")
+    public List<AccountRecord> getActiveAccounts(
+            @RequestParam("userId") Long userId
     ) {
-        return accountService.getAccountsByuserId(userId)
-                .stream().map(accountDto ->
-                        AccountInfo.builder()
-                                .accountNumber(accountDto.getAccountNumber())
-                                .balance(accountDto.getBalance())
-                                .build())
-                .collect(Collectors.toList());
+        return accountService.getActiveAccounts(userId).stream()
+                .map(AccountRecord::from)
+                .toList();
     }
 
-    @GetMapping("/account/{id}")
-    public Account getAccount(
-            @PathVariable Long id) {
-        return accountService.getAccount(id);
+    @GetMapping("/accounts/{accountId}/collateral")
+    public BigDecimal getCollateralRate(
+            @PathVariable Long accountId,
+            @RequestParam("userId") Long userId
+    ) {
+        return accountService.getAccountCollateralRate(userId, accountId);
     }
 
+    @GetMapping("/accounts/{accountNumber}/auto-transfer")
+    public boolean isAutoTransferRegistered(@PathVariable String accountNumber) {
+        return autoTransferService.isAutoTransferRegistered(accountNumber);
+    }
+
+    @GetMapping("/accounts/{accountNumber}/auto-transfer/validate")
+    public void validateAutoTransferNotRegistered(@PathVariable String accountNumber) {
+        autoTransferService.validateAutoTransferNotRegistered(accountNumber);
+
+      
     @PostMapping("/accounts/{accountNumber}/restore")
     public CreateAccount.Response restoreAccount(
             @PathVariable String accountNumber,

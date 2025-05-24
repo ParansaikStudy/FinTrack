@@ -6,9 +6,9 @@ import com.track.fin.dto.AccountDto;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.AccountRecord;
 import com.track.fin.repository.AccountRepository;
-import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountType;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +26,18 @@ import static com.track.fin.type.ErrorCode.*;
 @RequiredArgsConstructor
 public class AccountService {
 
+    private static final long ACCOUNT_NUMBER_BASE = 1_000_000_000L;
+    private static final long ACCOUNT_NUMBER_RANGE = 9_000_000_000L;
+
     private final UserService userService;
     private final AccountRepository accountRepository;
+    private final AutoTransferService autoTransferService;
+    private final LoanService loanService;
     private final UserRepository userRepository;
     private final TransactionService transactionService;
 
     @Transactional
-    public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
+    public AccountRecord createAccount(Long userId, Long initialBalance, AccountType accountType) {
         User user = userService.get(userId);
 
         validateCreateAccount(user);
@@ -95,19 +100,32 @@ public class AccountService {
     public List<AccountDto> getAccountsByuserId(Long userId) {
         User user = userService.get(userId);
 
-        List<Account> accounts = accountRepository.findByUser(user);
+        closingAccount.setAccountStatus(CLOSED);
 
-        return accounts.stream()
-                .map(AccountRecord::from)
-                .collect(Collectors.toList());
+        return AccountRecord.from(accountRepository.save(closingAccount));
     }
 
     private void validateCreateAccount(User user) {
         if (accountRepository.countByUser(user) == 10) {
             throw new AccountException(MAX_ACCOUNT_PER_USER_10);
         }
+
+        if (hasClosedAccountWithinLastMonth(user)) {
+            throw new AccountException(CANNOT_CREATE_ACCOUNT_DUE_TO_RECENT_CLOSURE);
+        }
     }
 
+    private boolean hasClosedAccountWithinLastMonth(User user) {
+        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
+
+        return accountRepository.findByUser(user).stream()
+                .filter(account -> account.getAccountStatus() == CLOSED)
+                .anyMatch(account -> {
+                    LocalDateTime closedAt = account.getUnregisteredAt();
+                    return closedAt != null && closedAt.isAfter(oneMonthAgo);
+                });
+    }
+  
     private void validateDeleteAccount(User user, Account closingAccount, Account withdrawAccount) {
         if (!Objects.equals(user.getId(), closingAccount.getUser().getId())) {
             throw new AccountException(USER_ACCOUNT_UNMATCH);
@@ -121,6 +139,9 @@ public class AccountService {
         if (withdrawAccount.getAccountStatus() != ACTIVE) {
             throw new AccountException(WITHDRAW_ACCOUNT_INACTIVE);
         }
+        if (closingAccount.getBalance() > 0) {
+            throw new AccountException(BALANCE_NOT_EMPTY);
+        }
     }
 
     private void validateInitialBalance(Long initialBalance, AccountType accountType) {
@@ -129,12 +150,31 @@ public class AccountService {
         }
     }
 
+    private void validatePendingLoanOrAutoTransfer(Account account) {
+        boolean hasLoan = loanService.existsUnpaidLoanByAccount(account);
+        boolean hasAutoTransfer = autoTransferService.existsByAccount(account);
+
+        if (hasLoan) {
+            throw new AccountException(LOAN_EXISTS);
+        }
+        if (hasAutoTransfer) {
+            throw new AccountException(AUTO_TRANSFER_EXISTS);
+        }
+    }
+
     private Double calculatorRate(AccountType accountType) {
         return accountType.getBalance() * accountType.getRate();
     }
 
     private String generateUniqueAccountNumber() {
-        return String.valueOf(1000000000L + Math.random() * 9000000000L);
+        long randomNumber = (long) (Math.random() * ACCOUNT_NUMBER_RANGE);
+        return String.valueOf(ACCOUNT_NUMBER_BASE + randomNumber);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Account> getActiveAccounts(Long userId) {
+        User user = userService.get(userId);
+        return accountRepository.findByUserAndAccountStatus(user, ACTIVE);
     }
 
     @Transactional

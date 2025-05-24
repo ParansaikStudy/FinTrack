@@ -2,6 +2,7 @@ package com.track.fin.repository;
 
 import com.track.fin.domain.Account;
 import com.track.fin.domain.User;
+import com.track.fin.type.AccountStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -22,5 +23,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     boolean existsByAccountNumber(String accountNumber);
 
     List<Account> findByUserId(Long userId);
+
+    List<Account> findByUserAndAccountStatus(User user, AccountStatus status);
 
 }

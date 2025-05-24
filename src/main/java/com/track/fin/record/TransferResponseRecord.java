@@ -2,6 +2,8 @@ package com.track.fin.record;
 
 import com.track.fin.domain.Transaction;
 
+import java.time.LocalDateTime;
+
 public record TransferResponseRecord(
 
         String transactionId,
@@ -9,7 +11,8 @@ public record TransferResponseRecord(
         String toAccountNumber,
         Long amount,
         Long fromBalanceSnapshot,
-        Long toBalanceSnapshot
+        Long toBalanceSnapshot,
+        LocalDateTime transactionDate
 
 ) {
 
@@ -20,7 +23,20 @@ public record TransferResponseRecord(
                 toTransaction.getAccount().getAccountNumber(),
                 fromTransaction.getAmount(),
                 fromTransaction.getBalanceSnapshot(),
-                toTransaction.getBalanceSnapshot()
+                toTransaction.getBalanceSnapshot(),
+                fromTransaction.getTransactionDate()
+        );
+    }
+
+    public static TransferResponseRecord from(Transaction transaction) {
+        return new TransferResponseRecord(
+                transaction.getId(),
+                transaction.getAccount().getAccountNumber(),
+                null,
+                transaction.getAmount(),
+                transaction.getBalanceSnapshot(),
+                null,
+                transaction.getTransactionDate()
         );
     }
 

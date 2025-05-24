@@ -6,6 +6,11 @@ import com.track.fin.type.AccountType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import java.time.LocalDateTime;
+
+import static com.track.fin.type.AccountStatus.CLOSED;
+import static com.track.fin.type.AccountStatus.LOCKED;
+
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -47,7 +52,11 @@ public class Account {
 
     @Setter
     @Enumerated(EnumType.STRING)
+    @Setter
     private AccountStatus accountStatus;
+
+    private LocalDateTime registerdAt;
+    private LocalDateTime unregisteredAt;
 
     private Long lockedAmount = 0L;
 
@@ -107,4 +116,5 @@ public class Account {
         this.accountStatus = accountStatus;
 
     }
+
 }

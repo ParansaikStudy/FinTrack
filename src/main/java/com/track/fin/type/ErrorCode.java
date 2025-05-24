@@ -24,10 +24,16 @@ public enum ErrorCode {
     INSUFFICIENT_BALANCE("잔액이 부족합니다."),
     MAX_DEPOSIT_LIMIT_EXCEEDED("입금 한도를 초과했습니다."),
     LOAN_NOT_FOUND("대출 찾을 수 없습니다."),
+    AUTO_TRANSFER_ACTIVE("자동이체가 등록된 계좌입니다."),
+    LOAN_EXISTS("미결제 대출이 존재합니다."),
+    AUTO_TRANSFER_EXISTS("자동이체가 등록된 계좌입니다."),
+    WITHDRAW_ACCOUNT_NOT_PROVIDED("출금 계좌가 등록되지 않았습니다."),
+    WITHDRAW_ACCOUNT_UNMATCH("출금 계좌가 사용자와 일치하지 않습니다."),
+    WITHDRAW_ACCOUNT_INACTIVE("출금 계좌가 해지 상태입니다."),
+    CANNOT_CREATE_ACCOUNT_DUE_TO_RECENT_CLOSURE("해지된 계좌가 있어 1개월 내 신규 계좌 개설이 제한됩니다."),
     WITHDRAW_ACCOUNT_UNMATCH("출금 계좌가 사용자와 일치하지 않습니다."),
     WITHDRAW_ACCOUNT_INACTIVE("출금 계좌가 활성화 상태가 아닙니다."),
     ACCOUNT_RESTORE_EXPIRED("계좌 복구 가능 기간이 지났습니다."),
-
     ;
 
     private final String description;
