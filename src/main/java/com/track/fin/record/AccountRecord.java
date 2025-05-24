@@ -12,7 +12,7 @@ public record AccountRecord(
         String accountNumber,
         Long balance,
         AccountType accountType,
-        AccountStatus accountStatus,         // ✅ 추가
+        AccountStatus accountStatus,
         LocalDateTime registeredAt,
         LocalDateTime unregisteredAt
 
