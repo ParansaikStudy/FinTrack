@@ -3,23 +3,30 @@ package com.track.fin.domain;
 import com.track.fin.exception.AccountException;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
-import com.track.fin.type.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.time.LocalDateTime;
 
 import static com.track.fin.type.AccountStatus.CLOSED;
 import static com.track.fin.type.AccountStatus.LOCKED;
-import static com.track.fin.type.AccountType.LOANS;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+
+import java.time.LocalDateTime;
+
+import static com.track.fin.type.AccountStatus.*;
+import static com.track.fin.type.AccountType.LOANS;
+import static com.track.fin.type.ErrorCode.AMOUNT_EXCEED_BALANCE;
+
 @Entity
-@EntityListeners(AuditingEntityListener.class)
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Account {
 
     @Id
@@ -41,6 +48,9 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountType accountType;
 
+    private LocalDateTime unregisteredAt;
+
+    @Setter
     @Enumerated(EnumType.STRING)
     @Setter
     private AccountStatus accountStatus;
@@ -48,23 +58,29 @@ public class Account {
     private LocalDateTime registerdAt;
     private LocalDateTime unregisteredAt;
 
+    private Long lockedAmount = 0L;
 
     public void useBalance(Long amount) {
         if (accountStatus == LOCKED) {
-            // TODO: 담보 받은 금액 외에 사용 가능
+            Long availableBalance = balance - lockedAmount;
+
+            if (availableBalance < amount) {
+                throw new AccountException(AMOUNT_EXCEED_BALANCE);
+            }
+            balance -= amount;
             return;
         }
         if (amount > balance) {
-            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+            throw new AccountException(AMOUNT_EXCEED_BALANCE);
         }
         balance -= amount;
     }
 
-    // TODO: 사용자 생성 시 기본 회원 등급은 BRONZE
-
     public void afterLoan() {
         accountType = LOANS;
         accountStatus = LOCKED;
+        // 대출 생성시 추가 예정
+//       lockedAmount = collateralAmount;
     }
 
     public void deposit(Long amount) {
@@ -73,7 +89,7 @@ public class Account {
 
     public void withdraw(Long amount) {
         if (this.balance < amount) {
-            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+            throw new AccountException(AMOUNT_EXCEED_BALANCE);
         }
         this.balance -= amount;
     }
@@ -81,6 +97,24 @@ public class Account {
     public void close() {
         this.accountStatus = CLOSED;
         this.unregisteredAt = LocalDateTime.now();
+    }
+
+    public void restore() {
+        this.accountStatus = ACTIVE;
+        this.unregisteredAt = null;
+    }
+
+    @Builder
+    private Account(Long id, User user, String accountNumber, Long balance, Long minBalance, Boolean autoTransfer, AccountType accountType, AccountStatus accountStatus) {
+        this.id = id;
+        this.user = user;
+        this.accountNumber = accountNumber;
+        this.balance = balance;
+        this.minBalance = minBalance;
+        this.autoTransfer = autoTransfer;
+        this.accountType = accountType;
+        this.accountStatus = accountStatus;
+
     }
 
 }

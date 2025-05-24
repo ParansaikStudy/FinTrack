@@ -18,10 +18,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.track.fin.type.AccountStatus.ACTIVE;
 import static com.track.fin.type.AccountStatus.CLOSED;
+import static com.track.fin.type.AccountStatus.ACTIVE;
 import static com.track.fin.type.ErrorCode.*;
-
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +33,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AutoTransferService autoTransferService;
     private final LoanService loanService;
+    private final UserRepository userRepository;
     private final TransactionService transactionService;
 
     @Transactional
@@ -44,13 +44,14 @@ public class AccountService {
         validateInitialBalance(initialBalance, accountType);
 
         String newAccountNumber = generateUniqueAccountNumber();
-        Account account = accountRepository.save(Account.builder()
+        Account account = null;
+                /*accountRepository.save(Account.builder()
                 .user(user)
                 .accountStatus(ACTIVE)
                 .accountNumber(newAccountNumber)
                 .balance(initialBalance)
                 .accountType(accountType)
-                .build());
+                .build());*/
 
         return AccountRecord.from(account);
     }
@@ -81,22 +82,23 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountRecord deleteAccount(Long userId, String closingAccountNumber, String withdrawAccountNumber) {
+    public AccountDto deleteAccount(Long userId, String accountNumber, String withdrawAccountNumber) {
         User user = userService.get(userId);
-        Account closingAccount = getAccountByNumber(closingAccountNumber);
-
-        if (withdrawAccountNumber == null || withdrawAccountNumber.isBlank()) {
-            throw new AccountException(WITHDRAW_ACCOUNT_NOT_PROVIDED);
-        }
-
+        Account closingAccount = getAccountByNumber(accountNumber);
         Account withdrawAccount = getAccountByNumber(withdrawAccountNumber);
 
-        validatePendingLoanOrAutoTransfer(closingAccount);
         validateDeleteAccount(user, closingAccount, withdrawAccount);
 
-        if (closingAccount.getBalance() > 0) {
-            transactionService.transfer(userId, closingAccountNumber, withdrawAccountNumber, closingAccount.getBalance());
-        }
+        transactionService.transfer(userId, accountNumber, withdrawAccountNumber, closingAccount.getBalance());
+
+        closingAccount.close();
+
+        return AccountRecord.from(accountRepository.save(closingAccount));
+    }
+
+    @Transactional
+    public List<AccountDto> getAccountsByuserId(Long userId) {
+        User user = userService.get(userId);
 
         closingAccount.setAccountStatus(CLOSED);
 
@@ -123,7 +125,7 @@ public class AccountService {
                     return closedAt != null && closedAt.isAfter(oneMonthAgo);
                 });
     }
-
+  
     private void validateDeleteAccount(User user, Account closingAccount, Account withdrawAccount) {
         if (!Objects.equals(user.getId(), closingAccount.getUser().getId())) {
             throw new AccountException(USER_ACCOUNT_UNMATCH);
@@ -173,6 +175,32 @@ public class AccountService {
     public List<Account> getActiveAccounts(Long userId) {
         User user = userService.get(userId);
         return accountRepository.findByUserAndAccountStatus(user, ACTIVE);
+    }
+
+    @Transactional
+    public AccountDto restoreAccount(Long userId, String accountNumber) {
+        User user = userService.get(userId);
+        Account account = getAccountByNumber(accountNumber);
+
+        if (!Objects.equals(account.getUser().getId(), user.getId())) {
+            throw new AccountException(USER_ACCOUNT_UNMATCH);
+        }
+
+        if (account.getAccountStatus() != CLOSED) {
+            throw new AccountException(INVALID_REQUEST);
+        }
+
+        if (account.getUnregisteredAt() == null) {
+            throw new AccountException(INVALID_REQUEST);
+        }
+
+        if (account.getUnregisteredAt().isBefore(LocalDateTime.now().minusMonths(3))) {
+            accountRepository.delete(account);
+            throw new AccountException(ACCOUNT_RESTORE_EXPIRED);
+        }
+
+        account.restore();
+        return AccountRecord.from(accountRepository.save(account));
     }
 
 }

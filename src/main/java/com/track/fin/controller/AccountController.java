@@ -71,11 +71,12 @@ public class AccountController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestParam(defaultValue = "true") boolean sortDesc
     ) {
-        return transactionService.getTransferTransactionsByAccount(
-                accountNumber,
-                startDate,
-                endDate,
-                sortDesc
+        return DeleteAccount.Response.from(
+                accountService.deleteAccount(
+                        request.getUserId(),
+                        request.getAccountNumber(),
+                        request.getWithdrawAccountNumber()
+                )
         );
     }
 
@@ -104,6 +105,15 @@ public class AccountController {
     @GetMapping("/accounts/{accountNumber}/auto-transfer/validate")
     public void validateAutoTransferNotRegistered(@PathVariable String accountNumber) {
         autoTransferService.validateAutoTransferNotRegistered(accountNumber);
+
+      
+    @PostMapping("/accounts/{accountNumber}/restore")
+    public CreateAccount.Response restoreAccount(
+            @PathVariable String accountNumber,
+            @RequestParam Long userId
+    ) {
+        AccountDto restored = accountService.restoreAccount(userId, accountNumber);
+        return CreateAccount.Response.from(restored);
     }
 
 }

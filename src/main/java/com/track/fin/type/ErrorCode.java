@@ -31,7 +31,9 @@ public enum ErrorCode {
     WITHDRAW_ACCOUNT_UNMATCH("출금 계좌가 사용자와 일치하지 않습니다."),
     WITHDRAW_ACCOUNT_INACTIVE("출금 계좌가 해지 상태입니다."),
     CANNOT_CREATE_ACCOUNT_DUE_TO_RECENT_CLOSURE("해지된 계좌가 있어 1개월 내 신규 계좌 개설이 제한됩니다."),
-
+    WITHDRAW_ACCOUNT_UNMATCH("출금 계좌가 사용자와 일치하지 않습니다."),
+    WITHDRAW_ACCOUNT_INACTIVE("출금 계좌가 활성화 상태가 아닙니다."),
+    ACCOUNT_RESTORE_EXPIRED("계좌 복구 가능 기간이 지났습니다."),
     ;
 
     private final String description;

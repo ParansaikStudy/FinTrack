@@ -25,7 +25,9 @@ public class DeleteAccount {
         @NotBlank
         @Size(min = 10, max = 10)
         private String accountNumber;
+      
         private String withdrawAccountNumber;
+      
     }
 
     @Getter
@@ -47,4 +49,5 @@ public class DeleteAccount {
                     .build();
         }
     }
+
 }
