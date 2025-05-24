@@ -13,13 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.track.fin.type.AccountStatus.CLOSED;
+import static com.track.fin.type.AccountStatus.ACTIVE;
 import static com.track.fin.type.ErrorCode.*;
-
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class AccountService {
     private final UserService userService;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final TransactionService transactionService;
 
     @Transactional
     public AccountDto createAccount(Long userId, Long initialBalance, AccountType accountType) {
@@ -75,19 +77,21 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto deleteAccount(Long userId, String accountNumber) {
+    public AccountDto deleteAccount(Long userId, String accountNumber, String withdrawAccountNumber) {
         User user = userService.get(userId);
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        Account closingAccount = getAccountByNumber(accountNumber);
+        Account withdrawAccount = getAccountByNumber(withdrawAccountNumber);
 
-        validateDeleteAccount(user, account);
-        account.afterLoan();
+        validateDeleteAccount(user, closingAccount, withdrawAccount);
 
-        return AccountRecord.from(accountRepository.save(account));
+        transactionService.transfer(userId, accountNumber, withdrawAccountNumber, closingAccount.getBalance());
+
+        closingAccount.close();
+
+        return AccountRecord.from(accountRepository.save(closingAccount));
     }
 
     @Transactional
-
     public List<AccountDto> getAccountsByuserId(Long userId) {
         User user = userService.get(userId);
 
@@ -104,16 +108,18 @@ public class AccountService {
         }
     }
 
-
-    private void validateDeleteAccount(User user, Account account) {
-        if (!Objects.equals(user.getId(), account.getUser().getId())) {
+    private void validateDeleteAccount(User user, Account closingAccount, Account withdrawAccount) {
+        if (!Objects.equals(user.getId(), closingAccount.getUser().getId())) {
             throw new AccountException(USER_ACCOUNT_UNMATCH);
         }
-        if (account.getAccountStatus() == CLOSED) {
+        if (closingAccount.getAccountStatus() == CLOSED) {
             throw new AccountException(ACCOUNT_ALREADY_UNREGISTERED);
         }
-        if (account.getBalance() > 0) {
-            throw new AccountException(BALANCE_NOT_EMPTY);
+        if (!Objects.equals(user.getId(), withdrawAccount.getUser().getId())) {
+            throw new AccountException(WITHDRAW_ACCOUNT_UNMATCH);
+        }
+        if (withdrawAccount.getAccountStatus() != ACTIVE) {
+            throw new AccountException(WITHDRAW_ACCOUNT_INACTIVE);
         }
     }
 
@@ -129,6 +135,32 @@ public class AccountService {
 
     private String generateUniqueAccountNumber() {
         return String.valueOf(1000000000L + Math.random() * 9000000000L);
+    }
+
+    @Transactional
+    public AccountDto restoreAccount(Long userId, String accountNumber) {
+        User user = userService.get(userId);
+        Account account = getAccountByNumber(accountNumber);
+
+        if (!Objects.equals(account.getUser().getId(), user.getId())) {
+            throw new AccountException(USER_ACCOUNT_UNMATCH);
+        }
+
+        if (account.getAccountStatus() != CLOSED) {
+            throw new AccountException(INVALID_REQUEST);
+        }
+
+        if (account.getUnregisteredAt() == null) {
+            throw new AccountException(INVALID_REQUEST);
+        }
+
+        if (account.getUnregisteredAt().isBefore(LocalDateTime.now().minusMonths(3))) {
+            accountRepository.delete(account);
+            throw new AccountException(ACCOUNT_RESTORE_EXPIRED);
+        }
+
+        account.restore();
+        return AccountRecord.from(accountRepository.save(account));
     }
 
 }
