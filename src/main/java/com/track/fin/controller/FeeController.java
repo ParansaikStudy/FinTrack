@@ -15,27 +15,27 @@ public class FeeController {
 
     private final FeeService feeService;
 
-    @PostMapping("/fee")
+    @PostMapping("/fees")
     public FeeRecord createFee(@RequestBody FeeRecord feeRecord) {
         return FeeRecord.from(feeService.createFeeByGrade(feeRecord));
     }
 
-    @GetMapping("/fee")
+    @GetMapping("/fees")
     public List<Fee> getAllFees() {
         return feeService.getAllFees();
     }
 
-    @GetMapping("fee/{gradeType}")
+    @GetMapping("fees/{gradeType}")
     public FeeRecord getFee(@PathVariable GradeType gradeType) {
         return FeeRecord.from(feeService.getFeeByGrade(gradeType));
     }
 
-    @PutMapping("fee/{id}")
+    @PutMapping("fees/{id}")
     public FeeRecord updateFee(@PathVariable Long id, @RequestBody FeeRecord feeRecord) {
         return FeeRecord.from(feeService.updateFee(id, feeRecord));
     }
 
-    @DeleteMapping("fee/{id}")
+    @DeleteMapping("fees/{id}")
     public void deleteFee(@PathVariable Long id) {
         feeService.deleteFee(id);
     }
