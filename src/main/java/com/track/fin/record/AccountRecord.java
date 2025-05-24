@@ -13,7 +13,6 @@ public record AccountRecord(
         Long balance,
         AccountType accountType,
         AccountStatus accountStatus,
-        LocalDateTime registeredAt,
         LocalDateTime unregisteredAt
 
 ) {
@@ -25,7 +24,6 @@ public record AccountRecord(
                 account.getBalance(),
                 account.getAccountType(),
                 account.getAccountStatus(),
-                account.getRegisterdAt(),
                 account.getUnregisteredAt()
         );
     }

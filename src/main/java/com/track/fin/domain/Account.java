@@ -39,8 +39,7 @@ public class Account {
 
     @Setter
     @Enumerated(EnumType.STRING)
-    @Builder.Default
-    private AccountStatus accountStatus = ACTIVE;
+    private AccountStatus accountStatus;
 
     // TODO: 대출 생성시 추가 예정
     private final Long lockedAmount = 0L;
@@ -89,15 +88,14 @@ public class Account {
     }
 
     @Builder
-    private Account(Long id, User user, String accountNumber, Long balance, Boolean autoTransfer, AccountType accountType, AccountStatus accountStatus) {
+    private Account(Long id, User user, String accountNumber, Long balance, Boolean autoTransfer, AccountType accountType) {
         this.id = id;
         this.user = user;
         this.accountNumber = accountNumber;
         this.balance = balance;
         this.autoTransfer = autoTransfer;
         this.accountType = accountType;
-        this.accountStatus = accountStatus;
-
+        this.accountStatus = ACTIVE;
     }
 
     public static Account from(User user, CreateAccount createAccount, String newAccountNumber) {
