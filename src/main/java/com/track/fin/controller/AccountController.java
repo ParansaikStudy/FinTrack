@@ -96,12 +96,12 @@ public class AccountController {
         return accountService.getAccountCollateralRate(userId, accountId);
     }
 
-    @GetMapping("/{accountNumber}/auto-transfer")
+    @GetMapping("accounts/{accountNumber}/auto-transfer")
     public boolean isAutoTransferRegistered(@PathVariable String accountNumber) {
         return autoTransferService.isAutoTransferRegistered(accountNumber);
     }
 
-    @GetMapping("/{accountNumber}/auto-transfer/validate")
+    @GetMapping("accounts/{accountNumber}/auto-transfer/validate")
     public void validateAutoTransferNotRegistered(@PathVariable String accountNumber) {
         autoTransferService.validateAutoTransferNotRegistered(accountNumber);
     }
