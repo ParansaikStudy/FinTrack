@@ -10,6 +10,7 @@ import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.TransactionRepository;
 import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountStatus;
+import com.track.fin.type.TransactionMethodType;
 import com.track.fin.type.TransactionResultType;
 import com.track.fin.type.TransactionType;
 import lombok.RequiredArgsConstructor;
@@ -275,6 +276,11 @@ public class TransactionService {
         if (from.getAccountNumber().equals(to.getAccountNumber())) {
             throw new AccountException(INVALID_REQUEST);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByAccountAndTransactionMethodType(Account account) {
+        return transactionRepository.existsByAccountAndTransactionMethodType(account, TransactionMethodType.AUTO);
     }
 
 }

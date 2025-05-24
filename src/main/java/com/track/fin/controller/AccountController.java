@@ -1,16 +1,8 @@
 package com.track.fin.controller;
 
 import com.track.fin.domain.Account;
-import com.track.fin.dto.AccountDto;
-import com.track.fin.dto.AccountInfo;
-import com.track.fin.dto.CreateAccount;
-import com.track.fin.dto.DeleteAccount;
-import com.track.fin.record.AccountRecord;
-import com.track.fin.record.TransferResponseRecord;
+import com.track.fin.record.*;
 import com.track.fin.service.AccountService;
-import com.track.fin.service.AutoTransferService;
-import com.track.fin.service.TransactionService;
-import com.track.fin.type.AccountType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,26 +11,22 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/accounts")
 @RequiredArgsConstructor
 public class AccountController {
 
     private final AccountService accountService;
-    private final TransactionService transactionService;
-    private final AutoTransferService autoTransferService;
 
-    @PostMapping("/accounts")
-    public AccountRecord createAccount(
-            @RequestParam Long userId,
-            @RequestParam Long initialBalance,
-            @RequestParam AccountType accountType
+    @PostMapping
+    public Account createAccount(
+            CreateAccount createAccount
     ) {
-        return accountService.createAccount(userId, initialBalance, accountType);
+        return accountService.createAccount(createAccount);
     }
 
-    @GetMapping("/accounts")
+    @GetMapping
     public List<AccountRecord> getAccountsByUserId(
             @RequestParam("userId") Long userId
     ) {
@@ -47,40 +35,32 @@ public class AccountController {
                 .toList();
     }
 
-    @GetMapping("/accounts/{id}")
+    @GetMapping("/{id}")
     public Account getAccount(
-            @PathVariable Long id) {
+            @PathVariable Long id
+    ) {
         return accountService.getAccount(id);
     }
 
-    @DeleteMapping("/accounts")
+    @DeleteMapping
     public AccountRecord deleteAccount(
-            @RequestBody @Valid DeleteAccount.Request request
+            @RequestBody @Valid DeleteAccountRecord deleteAccountRecord
     ) {
-        return accountService.deleteAccount(
-                request.getUserId(),
-                request.getAccountNumber(),
-                request.getWithdrawAccountNumber()
-        );
+        return accountService.deleteAccount(deleteAccountRecord);
     }
 
-    @GetMapping("/accounts/{accountNumber}/transactions")
-    public List<TransferResponseRecord> getTransferTransactions(
+    @GetMapping("/{accountNumber}/transactions")
+    public TransferResponseRecord getTransferTransactions(
             @PathVariable String accountNumber,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestParam(defaultValue = "true") boolean sortDesc
+            @RequestParam(defaultValue = "true") boolean sortDesc,
+            @RequestBody TransferRequestRecord transferRequestRecord
     ) {
-        return DeleteAccount.Response.from(
-                accountService.deleteAccount(
-                        request.getUserId(),
-                        request.getAccountNumber(),
-                        request.getWithdrawAccountNumber()
-                )
-        );
+        return TransferResponseRecord.from(null);
     }
 
-    @GetMapping("/accounts/active")
+    @GetMapping("/active")
     public List<AccountRecord> getActiveAccounts(
             @RequestParam("userId") Long userId
     ) {
@@ -89,7 +69,7 @@ public class AccountController {
                 .toList();
     }
 
-    @GetMapping("/accounts/{accountId}/collateral")
+    @GetMapping("/{accountId}/collateral")
     public BigDecimal getCollateralRate(
             @PathVariable Long accountId,
             @RequestParam("userId") Long userId
@@ -97,23 +77,26 @@ public class AccountController {
         return accountService.getAccountCollateralRate(userId, accountId);
     }
 
-    @GetMapping("/accounts/{accountNumber}/auto-transfer")
-    public boolean isAutoTransferRegistered(@PathVariable String accountNumber) {
-        return autoTransferService.isAutoTransferRegistered(accountNumber);
-    }
-
-    @GetMapping("/accounts/{accountNumber}/auto-transfer/validate")
-    public void validateAutoTransferNotRegistered(@PathVariable String accountNumber) {
-        autoTransferService.validateAutoTransferNotRegistered(accountNumber);
-
-      
-    @PostMapping("/accounts/{accountNumber}/restore")
-    public CreateAccount.Response restoreAccount(
+    @PostMapping("/{accountNumber}/restore")
+    public CreateAccountRecord restoreAccount(
             @PathVariable String accountNumber,
             @RequestParam Long userId
     ) {
-        AccountDto restored = accountService.restoreAccount(userId, accountNumber);
-        return CreateAccount.Response.from(restored);
+        return CreateAccountRecord.from(accountService.restoreAccount(userId, accountNumber));
+    }
+
+    @GetMapping("/{accountNumber}/auto-transfer")
+    public boolean isAutoTransferRegistered(
+            @PathVariable String accountNumber
+    ) {
+        return accountService.isAutoTransferRegistered(accountNumber);
+    }
+
+    @GetMapping("/{accountNumber}/auto-transfer/validate")
+    public boolean validateAutoTransferNotRegistered(
+            @PathVariable String accountNumber
+    ) {
+        return accountService.validateAutoTransferNotRegistered(accountNumber);
     }
 
 }

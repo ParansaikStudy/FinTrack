@@ -1,22 +1,11 @@
 package com.track.fin.domain;
 
 import com.track.fin.exception.AccountException;
+import com.track.fin.record.CreateAccount;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.AccountType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import java.time.LocalDateTime;
-
-import static com.track.fin.type.AccountStatus.CLOSED;
-import static com.track.fin.type.AccountStatus.LOCKED;
-
-
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 
 import java.time.LocalDateTime;
 
@@ -41,8 +30,6 @@ public class Account {
 
     private Long balance;
 
-    private Long minBalance;
-
     private Boolean autoTransfer;
 
     @Enumerated(EnumType.STRING)
@@ -52,17 +39,15 @@ public class Account {
 
     @Setter
     @Enumerated(EnumType.STRING)
-    @Setter
-    private AccountStatus accountStatus;
+    @Builder.Default
+    private AccountStatus accountStatus = ACTIVE;
 
-    private LocalDateTime registerdAt;
-    private LocalDateTime unregisteredAt;
-
-    private Long lockedAmount = 0L;
+    // TODO: 대출 생성시 추가 예정
+    private final Long lockedAmount = 0L;
 
     public void useBalance(Long amount) {
         if (accountStatus == LOCKED) {
-            Long availableBalance = balance - lockedAmount;
+            long availableBalance = balance - lockedAmount;
 
             if (availableBalance < amount) {
                 throw new AccountException(AMOUNT_EXCEED_BALANCE);
@@ -79,7 +64,6 @@ public class Account {
     public void afterLoan() {
         accountType = LOANS;
         accountStatus = LOCKED;
-        // 대출 생성시 추가 예정
 //       lockedAmount = collateralAmount;
     }
 
@@ -105,16 +89,24 @@ public class Account {
     }
 
     @Builder
-    private Account(Long id, User user, String accountNumber, Long balance, Long minBalance, Boolean autoTransfer, AccountType accountType, AccountStatus accountStatus) {
+    private Account(Long id, User user, String accountNumber, Long balance, Boolean autoTransfer, AccountType accountType, AccountStatus accountStatus) {
         this.id = id;
         this.user = user;
         this.accountNumber = accountNumber;
         this.balance = balance;
-        this.minBalance = minBalance;
         this.autoTransfer = autoTransfer;
         this.accountType = accountType;
         this.accountStatus = accountStatus;
 
+    }
+
+    public static Account from(User user, CreateAccount createAccount, String newAccountNumber) {
+        return Account.builder()
+                .user(user)
+                .accountNumber(newAccountNumber)
+                .balance(createAccount.initialBalance())
+                .accountType(createAccount.accountType())
+                .build();
     }
 
 }

@@ -2,58 +2,45 @@ package com.track.fin.service;
 
 import com.track.fin.domain.Account;
 import com.track.fin.domain.User;
-import com.track.fin.dto.AccountDto;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.AccountRecord;
+import com.track.fin.record.CreateAccount;
+import com.track.fin.record.DeleteAccountRecord;
 import com.track.fin.repository.AccountRepository;
-import com.track.fin.type.AccountType;
+import com.track.fin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
-import static com.track.fin.type.AccountStatus.CLOSED;
+import static com.track.fin.design.singleton.AccountUtils.generateUniqueAccountNumber;
+import static com.track.fin.design.singleton.AccountValidates.*;
 import static com.track.fin.type.AccountStatus.ACTIVE;
+import static com.track.fin.type.AccountStatus.CLOSED;
 import static com.track.fin.type.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
 public class AccountService {
 
-    private static final long ACCOUNT_NUMBER_BASE = 1_000_000_000L;
-    private static final long ACCOUNT_NUMBER_RANGE = 9_000_000_000L;
+    private final AccountRepository accountRepository;
 
     private final UserService userService;
-    private final AccountRepository accountRepository;
-    private final AutoTransferService autoTransferService;
     private final LoanService loanService;
     private final UserRepository userRepository;
     private final TransactionService transactionService;
 
     @Transactional
-    public AccountRecord createAccount(Long userId, Long initialBalance, AccountType accountType) {
-        User user = userService.get(userId);
+    public Account createAccount(CreateAccount createAccount) {
+        User user = userService.get(createAccount.userId());
 
         validateCreateAccount(user);
-        validateInitialBalance(initialBalance, accountType);
+        validateInitialBalance(createAccount.initialBalance(), createAccount.accountType());
 
-        String newAccountNumber = generateUniqueAccountNumber();
-        Account account = null;
-                /*accountRepository.save(Account.builder()
-                .user(user)
-                .accountStatus(ACTIVE)
-                .accountNumber(newAccountNumber)
-                .balance(initialBalance)
-                .accountType(accountType)
-                .build());*/
-
-        return AccountRecord.from(account);
+        return accountRepository.save(Account.from(user, createAccount, generateUniqueAccountNumber()));
     }
 
     @Transactional
@@ -82,26 +69,16 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto deleteAccount(Long userId, String accountNumber, String withdrawAccountNumber) {
-        User user = userService.get(userId);
-        Account closingAccount = getAccountByNumber(accountNumber);
-        Account withdrawAccount = getAccountByNumber(withdrawAccountNumber);
+    public AccountRecord deleteAccount(DeleteAccountRecord deleteAccountRecord) {
+        User user = userService.get(deleteAccountRecord.userId());
+        Account closingAccount = getAccountByNumber(deleteAccountRecord.accountNumber());
+        Account withdrawAccount = getAccountByNumber(deleteAccountRecord.withdrawAccountNumber());
 
         validateDeleteAccount(user, closingAccount, withdrawAccount);
 
-        transactionService.transfer(userId, accountNumber, withdrawAccountNumber, closingAccount.getBalance());
+        transactionService.transfer(deleteAccountRecord.userId(), deleteAccountRecord.accountNumber(), deleteAccountRecord.withdrawAccountNumber(), closingAccount.getBalance());
 
         closingAccount.close();
-
-        return AccountRecord.from(accountRepository.save(closingAccount));
-    }
-
-    @Transactional
-    public List<AccountDto> getAccountsByuserId(Long userId) {
-        User user = userService.get(userId);
-
-        closingAccount.setAccountStatus(CLOSED);
-
         return AccountRecord.from(accountRepository.save(closingAccount));
     }
 
@@ -125,51 +102,18 @@ public class AccountService {
                     return closedAt != null && closedAt.isAfter(oneMonthAgo);
                 });
     }
-  
-    private void validateDeleteAccount(User user, Account closingAccount, Account withdrawAccount) {
-        if (!Objects.equals(user.getId(), closingAccount.getUser().getId())) {
-            throw new AccountException(USER_ACCOUNT_UNMATCH);
-        }
-        if (closingAccount.getAccountStatus() == CLOSED) {
-            throw new AccountException(ACCOUNT_ALREADY_UNREGISTERED);
-        }
-        if (!Objects.equals(user.getId(), withdrawAccount.getUser().getId())) {
-            throw new AccountException(WITHDRAW_ACCOUNT_UNMATCH);
-        }
-        if (withdrawAccount.getAccountStatus() != ACTIVE) {
-            throw new AccountException(WITHDRAW_ACCOUNT_INACTIVE);
-        }
-        if (closingAccount.getBalance() > 0) {
-            throw new AccountException(BALANCE_NOT_EMPTY);
-        }
-    }
 
-    private void validateInitialBalance(Long initialBalance, AccountType accountType) {
-        if (accountType.getBalance().equals(initialBalance)) {
-            throw new AccountException(INSUFFICIENT_INITIAL_BALANCE);
-        }
-    }
-
-    private void validatePendingLoanOrAutoTransfer(Account account) {
-        boolean hasLoan = loanService.existsUnpaidLoanByAccount(account);
-        boolean hasAutoTransfer = autoTransferService.existsByAccount(account);
-
-        if (hasLoan) {
-            throw new AccountException(LOAN_EXISTS);
-        }
-        if (hasAutoTransfer) {
-            throw new AccountException(AUTO_TRANSFER_EXISTS);
-        }
-    }
-
-    private Double calculatorRate(AccountType accountType) {
-        return accountType.getBalance() * accountType.getRate();
-    }
-
-    private String generateUniqueAccountNumber() {
-        long randomNumber = (long) (Math.random() * ACCOUNT_NUMBER_RANGE);
-        return String.valueOf(ACCOUNT_NUMBER_BASE + randomNumber);
-    }
+//    private void validatePendingLoanOrAutoTransfer(Account account) {
+//        boolean hasLoan = loanService.existsUnpaidLoanByAccount(account);
+////        boolean hasAutoTransfer = this.existsByAccount(account);
+//
+//        if (hasLoan) {
+//            throw new AccountException(LOAN_EXISTS);
+//        }
+//        if (hasAutoTransfer) {
+//            throw new AccountException(AUTO_TRANSFER_EXISTS);
+//        }
+//    }
 
     @Transactional(readOnly = true)
     public List<Account> getActiveAccounts(Long userId) {
@@ -178,29 +122,41 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto restoreAccount(Long userId, String accountNumber) {
+    public AccountRecord restoreAccount(Long userId, String accountNumber) {
         User user = userService.get(userId);
         Account account = getAccountByNumber(accountNumber);
 
-        if (!Objects.equals(account.getUser().getId(), user.getId())) {
-            throw new AccountException(USER_ACCOUNT_UNMATCH);
-        }
+        validateRestoreAccount(user, account);
 
-        if (account.getAccountStatus() != CLOSED) {
-            throw new AccountException(INVALID_REQUEST);
-        }
+        account.restore();
+        return AccountRecord.from(accountRepository.save(account));
+    }
 
-        if (account.getUnregisteredAt() == null) {
-            throw new AccountException(INVALID_REQUEST);
-        }
-
+    // TODO: 3개월 지나면 삭제
+    private void delete(Account account){
         if (account.getUnregisteredAt().isBefore(LocalDateTime.now().minusMonths(3))) {
             accountRepository.delete(account);
             throw new AccountException(ACCOUNT_RESTORE_EXPIRED);
         }
+    }
 
-        account.restore();
-        return AccountRecord.from(accountRepository.save(account));
+    public boolean validateAutoTransferNotRegistered(String accountNumber) {
+        Account account = getAccountByNumber(accountNumber);
+
+        if (Boolean.TRUE.equals(account.getAutoTransfer())) {
+            throw new AccountException(AUTO_TRANSFER_ACTIVE);
+        }
+
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isAutoTransferRegistered(String accountNumber) {
+        return this.findByAccountNumber(accountNumber).getAutoTransfer();
+    }
+
+    public Account findByAccountNumber(String accountNumber) {
+        return accountRepository.findByAccountNumber(accountNumber).orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
     }
 
 }
