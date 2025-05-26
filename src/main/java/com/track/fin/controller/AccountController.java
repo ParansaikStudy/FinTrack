@@ -2,6 +2,7 @@ package com.track.fin.controller;
 
 import com.track.fin.domain.Account;
 import com.track.fin.record.*;
+import com.track.fin.service.AccountManagementService;
 import com.track.fin.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
+    private final AccountManagementService accountManagementService;
 
     @PostMapping
     public Account createAccount(
@@ -42,11 +44,12 @@ public class AccountController {
         return accountService.getAccount(id);
     }
 
-    @DeleteMapping
-    public AccountRecord deleteAccount(
-            @RequestBody @Valid DeleteAccountRecord deleteAccountRecord
+    @PostMapping("/restore")
+    public AccountRecord restoreAccount(
+            @RequestParam Long userId,
+            @RequestParam String accountNumber
     ) {
-        return accountService.deleteAccount(deleteAccountRecord);
+        return accountManagementService.restoreAccount(userId, accountNumber);
     }
 
     @GetMapping("/{accountNumber}/transactions")
@@ -97,6 +100,17 @@ public class AccountController {
             @PathVariable String accountNumber
     ) {
         return accountService.validateAutoTransferNotRegistered(accountNumber);
+    }
+
+    @DeleteMapping
+    public AccountRecord deleteAccount(@Valid @RequestBody DeleteAccountRecord request) {
+        return accountManagementService.deleteAccount(request);
+    }
+
+    @DeleteMapping("/expired/{accountNumber}")
+    public void deleteExpiredAccount(@PathVariable String accountNumber) {
+        Account account = accountService.getAccountByNumber(accountNumber);
+        accountManagementService.deleteIfExpired(account);
     }
 
 }

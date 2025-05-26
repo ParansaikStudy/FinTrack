@@ -8,6 +8,7 @@ import com.track.fin.record.CreateAccount;
 import com.track.fin.record.DeleteAccountRecord;
 import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.UserRepository;
+import com.track.fin.type.TransactionMethodType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +32,6 @@ public class AccountService {
     private final UserService userService;
     private final LoanService loanService;
     private final UserRepository userRepository;
-    private final TransactionService transactionService;
 
     @Transactional
     public Account createAccount(CreateAccount createAccount) {
@@ -68,25 +68,10 @@ public class AccountService {
         return accountRepository.findByUserId(userId);
     }
 
-    @Transactional
-    public AccountRecord deleteAccount(DeleteAccountRecord deleteAccountRecord) {
-        User user = userService.get(deleteAccountRecord.userId());
-        Account closingAccount = getAccountByNumber(deleteAccountRecord.accountNumber());
-        Account withdrawAccount = getAccountByNumber(deleteAccountRecord.withdrawAccountNumber());
-
-        validateDeleteAccount(user, closingAccount, withdrawAccount);
-
-        transactionService.transfer(deleteAccountRecord.userId(), deleteAccountRecord.accountNumber(), deleteAccountRecord.withdrawAccountNumber(), closingAccount.getBalance());
-
-        closingAccount.close();
-        return AccountRecord.from(accountRepository.save(closingAccount));
-    }
-
     private void validateCreateAccount(User user) {
         if (accountRepository.countByUser(user) == 10) {
             throw new AccountException(MAX_ACCOUNT_PER_USER_10);
         }
-
         if (hasClosedAccountWithinLastMonth(user)) {
             throw new AccountException(CANNOT_CREATE_ACCOUNT_DUE_TO_RECENT_CLOSURE);
         }
@@ -103,18 +88,6 @@ public class AccountService {
                 });
     }
 
-//    private void validatePendingLoanOrAutoTransfer(Account account) {
-//        boolean hasLoan = loanService.existsUnpaidLoanByAccount(account);
-////        boolean hasAutoTransfer = this.existsByAccount(account);
-//
-//        if (hasLoan) {
-//            throw new AccountException(LOAN_EXISTS);
-//        }
-//        if (hasAutoTransfer) {
-//            throw new AccountException(AUTO_TRANSFER_EXISTS);
-//        }
-//    }
-
     @Transactional(readOnly = true)
     public List<Account> getActiveAccounts(Long userId) {
         User user = userService.get(userId);
@@ -130,14 +103,6 @@ public class AccountService {
 
         account.restore();
         return AccountRecord.from(accountRepository.save(account));
-    }
-
-    // TODO: 3개월 지나면 삭제
-    private void delete(Account account){
-        if (account.getUnregisteredAt().isBefore(LocalDateTime.now().minusMonths(3))) {
-            accountRepository.delete(account);
-            throw new AccountException(ACCOUNT_RESTORE_EXPIRED);
-        }
     }
 
     public boolean validateAutoTransferNotRegistered(String accountNumber) {
