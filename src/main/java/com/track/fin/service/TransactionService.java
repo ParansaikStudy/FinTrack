@@ -6,7 +6,6 @@ import com.track.fin.domain.User;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.TransferResponseRecord;
 import com.track.fin.repository.TransactionRepository;
-import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.TransactionMethodType;
 import com.track.fin.type.TransactionResultType;
@@ -35,14 +34,13 @@ public class TransactionService {
     private static final long MAX_DEPOSIT_AMOUNT = 1_000_000L;
 
     private final TransactionRepository transactionRepository;
-    private final UserRepository userRepository;
+
     private final AccountService accountService;
     private final UserService userService;
 
     @Transactional
     public TransferResponseRecord useBalance(Long userId, String accountNumber, Long amount, TransactionMethodType methodType) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        User user = userService.get(userId);
 
         Account account = accountService.getAccountByNumber(accountNumber);
 
@@ -188,8 +186,7 @@ public class TransactionService {
 
     @Transactional
     public Transaction deposit(Long userId, String accountNumber, Long amount, TransactionMethodType methodType) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        User user = userService.get(userId);
 
         Account account = accountService.getAccountByNumber(accountNumber);
 
@@ -216,8 +213,7 @@ public class TransactionService {
 
     @Transactional
     public Transaction withdraw(Long userId, String accountNumber, Long amount, TransactionMethodType methodType) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        User user = userService.get(userId);
 
         Account account = accountService.getAccountByNumber(accountNumber);
 
@@ -251,8 +247,7 @@ public class TransactionService {
 
     @Transactional
     public TransferResponseRecord transfer(Long userId, String fromAccountNumber, String toAccountNumber, Long amount, TransactionMethodType methodType) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
+        User user = userService.get(userId);
         Account fromAccount = accountService.getAccountByNumber(fromAccountNumber);
         Account toAccount = accountService.getAccountByNumber(toAccountNumber);
 
@@ -300,6 +295,10 @@ public class TransactionService {
         if (amount > MAX_DEPOSIT_AMOUNT) {
             throw new AccountException(AMOUNT_EXCEED_DEPOSIT_LIMIT);
         }
+    }
+
+    public boolean existsByAccountAndTransactionMethodType(Account account, TransactionMethodType auto) {
+        return transactionRepository.existsByAccountAndTransactionMethodType(account, auto);
     }
 
 }

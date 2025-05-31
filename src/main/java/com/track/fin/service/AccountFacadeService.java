@@ -5,8 +5,6 @@ import com.track.fin.domain.User;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.AccountRecord;
 import com.track.fin.record.DeleteAccountRecord;
-import com.track.fin.repository.AccountRepository;
-import com.track.fin.repository.TransactionRepository;
 import com.track.fin.type.TransactionMethodType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,14 +18,13 @@ import static com.track.fin.type.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
-public class AccountManagementService {
+public class AccountFacadeService {
 
-    private final LoanService loanService;
     private final UserService userService;
     private final AccountService accountService;
+    private final LoanService loanService;
     private final TransactionService transactionService;
-    private final AccountRepository accountRepository;
-    private final TransactionRepository transactionRepository;
+
 
     @Transactional
     public AccountRecord deleteAccount(DeleteAccountRecord deleteAccountRecord) {
@@ -40,7 +37,7 @@ public class AccountManagementService {
         transferRemainingBalanceIfExists(deleteAccountRecord, closingAccount);
 
         closingAccount.close();
-        return AccountRecord.from(accountRepository.save(closingAccount));
+        return AccountRecord.from(accountService.createAccount(closingAccount));
     }
 
     @Transactional
@@ -51,14 +48,14 @@ public class AccountManagementService {
         validateRestoreAccount(user, account);
         account.restore();
 
-        return AccountRecord.from(accountRepository.save(account));
+        return AccountRecord.from(accountService.createAccount(account));
     }
 
     @Transactional
     public void deleteIfExpired(Account account) {
         if (account.getUnregisteredAt() != null &&
                 account.getUnregisteredAt().isBefore(LocalDateTime.now().minusMonths(3))) {
-            accountRepository.delete(account);
+            accountService.deleteAccount(account);
             throw new AccountException(ACCOUNT_RESTORE_EXPIRED);
         }
     }
@@ -77,7 +74,7 @@ public class AccountManagementService {
    // TODO : 대출 로직 구현 후 사용 예정
     private void validatePendingLoanOrAutoTransfer(Account account) {
         boolean hasLoan = loanService.existsUnpaidLoanByAccount(account);
-        boolean hasAutoTransfer = transactionRepository.existsByAccountAndTransactionMethodType(account, TransactionMethodType.AUTO); // 수정
+        boolean hasAutoTransfer = transactionService.existsByAccountAndTransactionMethodType(account, TransactionMethodType.AUTO);
 
         if (hasLoan) {
             throw new AccountException(LOAN_EXISTS);

@@ -2,7 +2,7 @@ package com.track.fin.controller;
 
 import com.track.fin.domain.Account;
 import com.track.fin.record.*;
-import com.track.fin.service.AccountManagementService;
+import com.track.fin.service.AccountFacadeService;
 import com.track.fin.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
-    private final AccountManagementService accountManagementService;
+    private final AccountFacadeService accountFacadeService;
 
     @PostMapping
     public Account createAccount(
@@ -49,7 +49,7 @@ public class AccountController {
             @RequestParam Long userId,
             @RequestParam String accountNumber
     ) {
-        return accountManagementService.restoreAccount(userId, accountNumber);
+        return accountFacadeService.restoreAccount(userId, accountNumber);
     }
 
     @GetMapping("/{accountNumber}/transactions")
@@ -104,13 +104,13 @@ public class AccountController {
 
     @DeleteMapping
     public AccountRecord deleteAccount(@Valid @RequestBody DeleteAccountRecord request) {
-        return accountManagementService.deleteAccount(request);
+        return accountFacadeService.deleteAccount(request);
     }
 
     @DeleteMapping("/expired/{accountNumber}")
     public void deleteExpiredAccount(@PathVariable String accountNumber) {
         Account account = accountService.getAccountByNumber(accountNumber);
-        accountManagementService.deleteIfExpired(account);
+        accountFacadeService.deleteIfExpired(account);
     }
 
 }
