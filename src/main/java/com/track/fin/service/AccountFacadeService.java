@@ -72,14 +72,14 @@ public class AccountFacadeService {
         }
     }
    // TODO : 대출 로직 구현 후 사용 예정
-    private void validatePendingLoanOrAutoTransfer(Account account) {
-        boolean hasLoan = loanService.existsUnpaidLoanByAccount(account);
-        boolean hasAutoTransfer = transactionService.existsByAccountAndTransactionMethodType(account, TransactionMethodType.AUTO);
+   private void validateUnpaidLoan(Account account) {
+       if (loanService.existsUnpaidLoanByAccount(account)) {
+           throw new AccountException(LOAN_EXISTS);
+       }
+   }
 
-        if (hasLoan) {
-            throw new AccountException(LOAN_EXISTS);
-        }
-        if (hasAutoTransfer) {
+    private void validateAutoTransfer(Account account) {
+        if (transactionService.existsByAccountAndTransactionMethodType(account, TransactionMethodType.AUTO)) {
             throw new AccountException(AUTO_TRANSFER_EXISTS);
         }
     }

@@ -55,21 +55,16 @@ public class AccountController {
     @GetMapping("/{accountNumber}/transactions")
     public TransferResponseRecord getTransferTransactions(
             @PathVariable String accountNumber,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestParam(defaultValue = "true") boolean sortDesc,
+            @ModelAttribute TransferSearchRequestRecord searchRequest,
             @RequestBody TransferRequestRecord transferRequestRecord
     ) {
         return TransferResponseRecord.from(null);
     }
 
+
     @GetMapping("/active")
-    public List<AccountRecord> getActiveAccounts(
-            @RequestParam("userId") Long userId
-    ) {
-        return accountService.getActiveAccounts(userId).stream()
-                .map(AccountRecord::from)
-                .toList();
+    public List<AccountRecord> getActiveAccounts(@RequestParam("userId") Long userId) {
+        return accountService.getActiveAccounts(userId);
     }
 
     @GetMapping("/{accountId}/collateral")
