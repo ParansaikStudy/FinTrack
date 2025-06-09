@@ -89,9 +89,11 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<Account> getActiveAccounts(Long userId) {
+    public List<AccountRecord> getActiveAccounts(Long userId) {
         User user = userService.get(userId);
-        return accountRepository.findByUserAndAccountStatus(user, ACTIVE);
+        return accountRepository.findByUserAndAccountStatus(user, ACTIVE).stream()
+                .map(AccountRecord::from)
+                .toList();
     }
 
     @Transactional
