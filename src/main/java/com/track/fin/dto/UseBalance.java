@@ -1,5 +1,6 @@
 package com.track.fin.dto;
 
+import com.track.fin.type.TransactionMethodType;
 import com.track.fin.type.TransactionResultType;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,9 @@ public class UseBalance {
         @Min(10)
         @Max(1000_000_000)
         private Long amount;
+
+        @NotNull
+        private TransactionMethodType transactionMethodType;
     }
 
     @Getter

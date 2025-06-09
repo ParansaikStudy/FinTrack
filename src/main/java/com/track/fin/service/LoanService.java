@@ -5,31 +5,28 @@ import com.track.fin.domain.Loan;
 import com.track.fin.domain.User;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.CreateLoanRecord;
-import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.track.fin.type.ErrorCode.ACCOUNT_NOT_FOUND;
 import static com.track.fin.type.ErrorCode.LOAN_NOT_FOUND;
 import static com.track.fin.type.LoanStatus.REPAID;
 @Service
 @RequiredArgsConstructor
 public class LoanService {
 
-    private final UserService userService;
-    private final AccountRepository accountRepository;
     private final LoanRepository loanRepository;
+
+    private final AccountService accountService;
+    private final UserService userService;
 
     @Transactional
     public Loan createLoan(CreateLoanRecord createLoan) {
         User user = userService.get(createLoan.userId());
 
-        Account account = accountRepository.findById(createLoan.accountId())
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+        Account account = accountService.getAccount(createLoan.accountId());
         account.afterLoan();
-
 
         Loan loan = Loan.from(user, account, createLoan);
         return loanRepository.save(loan);
@@ -45,8 +42,7 @@ public class LoanService {
     public Loan updateLoan(Long loanId, CreateLoanRecord updateLoan) {
         Loan loan = getLoan(loanId);
 
-        Account account = accountRepository.findById(updateLoan.accountId())
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+        Account account = accountService.getAccount(updateLoan.accountId());
         User user = userService.get(updateLoan.userId());
 
         loan.update(user, account, updateLoan);

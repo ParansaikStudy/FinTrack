@@ -2,6 +2,7 @@ package com.track.fin.controller;
 
 import com.track.fin.domain.Account;
 import com.track.fin.record.*;
+import com.track.fin.service.AccountFacadeService;
 import com.track.fin.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
+    private final AccountFacadeService accountFacadeService;
 
     @PostMapping
     public Account createAccount(
@@ -42,31 +44,27 @@ public class AccountController {
         return accountService.getAccount(id);
     }
 
-    @DeleteMapping
-    public AccountRecord deleteAccount(
-            @RequestBody @Valid DeleteAccountRecord deleteAccountRecord
+    @PostMapping("/restore")
+    public AccountRecord restoreAccount(
+            @RequestParam Long userId,
+            @RequestParam String accountNumber
     ) {
-        return accountService.deleteAccount(deleteAccountRecord);
+        return accountFacadeService.restoreAccount(userId, accountNumber);
     }
 
     @GetMapping("/{accountNumber}/transactions")
     public TransferResponseRecord getTransferTransactions(
             @PathVariable String accountNumber,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestParam(defaultValue = "true") boolean sortDesc,
+            @ModelAttribute TransferSearchRequestRecord searchRequest,
             @RequestBody TransferRequestRecord transferRequestRecord
     ) {
         return TransferResponseRecord.from(null);
     }
 
+
     @GetMapping("/active")
-    public List<AccountRecord> getActiveAccounts(
-            @RequestParam("userId") Long userId
-    ) {
-        return accountService.getActiveAccounts(userId).stream()
-                .map(AccountRecord::from)
-                .toList();
+    public List<AccountRecord> getActiveAccounts(@RequestParam("userId") Long userId) {
+        return accountService.getActiveAccounts(userId);
     }
 
     @GetMapping("/{accountId}/collateral")
@@ -97,6 +95,17 @@ public class AccountController {
             @PathVariable String accountNumber
     ) {
         return accountService.validateAutoTransferNotRegistered(accountNumber);
+    }
+
+    @DeleteMapping
+    public AccountRecord deleteAccount(@Valid @RequestBody DeleteAccountRecord request) {
+        return accountFacadeService.deleteAccount(request);
+    }
+
+    @DeleteMapping("/expired/{accountNumber}")
+    public void deleteExpiredAccount(@PathVariable String accountNumber) {
+        Account account = accountService.getAccountByNumber(accountNumber);
+        accountFacadeService.deleteIfExpired(account);
     }
 
 }

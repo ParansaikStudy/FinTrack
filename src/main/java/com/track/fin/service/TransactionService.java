@@ -3,12 +3,9 @@ package com.track.fin.service;
 import com.track.fin.domain.Account;
 import com.track.fin.domain.Transaction;
 import com.track.fin.domain.User;
-import com.track.fin.dto.TransactionDto;
 import com.track.fin.exception.AccountException;
 import com.track.fin.record.TransferResponseRecord;
-import com.track.fin.repository.AccountRepository;
 import com.track.fin.repository.TransactionRepository;
-import com.track.fin.repository.UserRepository;
 import com.track.fin.type.AccountStatus;
 import com.track.fin.type.TransactionMethodType;
 import com.track.fin.type.TransactionResultType;
@@ -34,31 +31,40 @@ import static com.track.fin.type.TransactionType.*;
 @RequiredArgsConstructor
 public class TransactionService {
 
+    private static final long MAX_DEPOSIT_AMOUNT = 1_000_000L;
+
     private final TransactionRepository transactionRepository;
-    private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+
+    private final AccountService accountService;
+    private final UserService userService;
 
     @Transactional
-    public TransactionDto useBalance(Long userId, String accountNumber, Long amount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+    public TransferResponseRecord useBalance(Long userId, String accountNumber, Long amount, TransactionMethodType methodType) {
+        User user = userService.get(userId);
+
+        Account account = accountService.getAccountByNumber(accountNumber);
 
         validateUserBalance(user, account, amount);
         account.useBalance(amount);
 
-        return TransactionDto.fromEntity(
-                saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount)
-        );
+        Transaction transaction = saveAndGetTransaction(WITHDRAWAL, SUCCESS, account, amount, methodType);
+
+        return TransferResponseRecord.from(transaction);
     }
 
-    private Transaction saveAndGetTransaction(TransactionType type, TransactionResultType result, Account account, Long amount) {
+    private Transaction saveAndGetTransaction(
+            TransactionType type,
+            TransactionResultType result,
+            Account account,
+            Long amount,
+            TransactionMethodType methodType
+    ) {
         return transactionRepository.save(
                 Transaction.builder()
                         .id(UUID.randomUUID().toString().replace("-", ""))
                         .transactionType(type)
                         .transactionResultType(result)
+                        .transactionMethodType(methodType)
                         .account(account)
                         .amount(amount)
                         .balanceSnapshot(account.getBalance())
@@ -71,24 +77,25 @@ public class TransactionService {
             String accountNumber,
             LocalDateTime startDate,
             LocalDateTime endDate,
+            TransactionType transactionType,
             boolean sortDesc
     ) {
         Account account = getAccountByNumber(accountNumber);
-        List<Transaction> transfers = getTransferTransactions(account, startDate, endDate);
+        List<Transaction> transfers = getTransferTransactions(account, startDate, endDate, transactionType);
         List<TransferResponseRecord> results = convertToTransferRecords(transfers, accountNumber);
         sortTransferRecords(results, sortDesc);
         return results;
     }
 
     private Account getAccountByNumber(String accountNumber) {
-        return accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+        return accountService.getAccountByNumber(accountNumber);
     }
 
-    private List<Transaction> getTransferTransactions(Account account, LocalDateTime start, LocalDateTime end) {
-        return transactionRepository.findByAccountAndTransactionTypeAndTransactionDateBetween(
-                account, TransactionType.TRANSFER, start, end
-        );
+    private List<Transaction> getTransferTransactions(Account account, LocalDateTime start, LocalDateTime end, TransactionType type) {
+        if (type == null) {
+            return transactionRepository.findByAccountAndTransactionDateBetween(account, start, end);
+        }
+        return transactionRepository.findByAccountAndTransactionTypeAndTransactionDateBetween(account, type, start, end);
     }
 
     private List<TransferResponseRecord> convertToTransferRecords(List<Transaction> transactions, String accountNumber) {
@@ -121,30 +128,33 @@ public class TransactionService {
                 : a.transactionDate().compareTo(b.transactionDate()));
     }
 
-    public void saveFailedUseTransaction(String accountNumber, Long amount) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
-        saveAndGetTransaction(DEPOSIT, FAIL, account, amount);
+    public void saveFailedUseTransaction(String accountNumber, Long amount, TransactionMethodType transactionMethodType) {
+        Account account = accountService.getAccountByNumber(accountNumber);
+        saveAndGetTransaction(DEPOSIT, FAIL, account, amount, transactionMethodType);
     }
 
     @Transactional
-    public TransferResponseRecord cancelBalance(String transactionId, String accountNumber, Long amount) {
+    public TransferResponseRecord cancelBalance(
+            String transactionId,
+            String accountNumber,
+            Long amount,
+            TransactionMethodType methodType
+    ) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new AccountException(TRANSACTION_NOT_FOUND));
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+
+        Account account = accountService.getAccountByNumber(accountNumber);
 
         validateCancelBalance(transaction, account, amount);
         account.useBalance(amount);
 
-        Transaction newTransaction = saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount);
+        Transaction newTransaction = saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount, methodType);
         return TransferResponseRecord.from(newTransaction);
     }
 
-    public void saveFailedCancelTransaction(String accountNumber, Long amount) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
-        saveAndGetTransaction(DEPOSIT, FAIL, account, amount);
+    public void saveFailedCancelTransaction(String accountNumber, Long amount, TransactionMethodType methodType) {
+        Account account = accountService.getAccountByNumber(accountNumber);
+        saveAndGetTransaction(DEPOSIT, FAIL, account, amount, methodType);
     }
 
     public TransferResponseRecord queryTransactionId(String transactionId) {
@@ -152,7 +162,6 @@ public class TransactionService {
                 .orElseThrow(() -> new AccountException(TRANSACTION_NOT_FOUND));
         return TransferResponseRecord.from(transaction);
     }
-
 
     private void validateCancelBalance(Transaction transaction, Account account, Long amount) {
         if (!Objects.equals(transaction.getAccount().getId(), account.getId())) {
@@ -176,22 +185,21 @@ public class TransactionService {
     }
 
     @Transactional
-    public Transaction deposit(Long userId, String accountNumber, Long amount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+    public Transaction deposit(Long userId, String accountNumber, Long amount, TransactionMethodType methodType) {
+        User user = userService.get(userId);
 
-        validateDeposit(user, account);
+        Account account = accountService.getAccountByNumber(accountNumber);
+
+        validateDeposit(user, account, amount);
+
         account.deposit(amount);
 
-        return saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount);
+        return saveAndGetTransaction(DEPOSIT, SUCCESS, account, amount, methodType);
     }
 
-    public void saveFailedDepositTransaction(String accountNumber, Long amount) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
-        saveAndGetTransaction(DEPOSIT, FAIL, account, amount);
+    public void saveFailedDepositTransaction(String accountNumber, Long amount, TransactionMethodType methodType) {
+        Account account = accountService.getAccountByNumber(accountNumber);
+        saveAndGetTransaction(DEPOSIT, FAIL, account, amount, methodType);
     }
 
     private void validateDeposit(User user, Account account) {
@@ -204,22 +212,25 @@ public class TransactionService {
     }
 
     @Transactional
-    public Transaction withdraw(Long userId, String accountNumber, Long amount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+    public Transaction withdraw(Long userId, String accountNumber, Long amount, TransactionMethodType methodType) {
+        User user = userService.get(userId);
+
+        Account account = accountService.getAccountByNumber(accountNumber);
 
         validateWithdraw(user, account, amount);
         account.withdraw(amount);
 
-        return saveAndGetTransaction(WITHDRAWAL, SUCCESS, account, amount);
+        return saveAndGetTransaction(WITHDRAWAL, SUCCESS, account, amount, methodType);
     }
 
-    public void saveFailedWithdrawTransaction(String accountNumber, Long amount) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
-        saveAndGetTransaction(WITHDRAWAL, FAIL, account, amount);
+    public void saveFailedWithdrawTransaction(String accountNumber, Long amount, TransactionMethodType methodType) {
+        try {
+            Account account = accountService.getAccountByNumber(accountNumber);
+            saveAndGetTransaction(WITHDRAWAL, FAIL, account, amount, methodType);
+        } catch (AccountException e) {
+            log.error("출금 실패 거래 내역 저장 중 오류 발생 - 계좌번호: {}", accountNumber, e);
+            throw e;
+        }
     }
 
     private void validateWithdraw(User user, Account account, Long amount) {
@@ -235,32 +246,28 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransferResponseRecord transfer(Long userId, String fromAccountNumber, String toAccountNumber, Long amount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(USER_NOT_FOUND));
-        Account fromAccount = accountRepository.findByAccountNumber(fromAccountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
-        Account toAccount = accountRepository.findByAccountNumber(toAccountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
+    public TransferResponseRecord transfer(Long userId, String fromAccountNumber, String toAccountNumber, Long amount, TransactionMethodType methodType) {
+        User user = userService.get(userId);
+        Account fromAccount = accountService.getAccountByNumber(fromAccountNumber);
+        Account toAccount = accountService.getAccountByNumber(toAccountNumber);
 
         validateTransfer(user, fromAccount, toAccount, amount);
 
         fromAccount.withdraw(amount);
         toAccount.deposit(amount);
 
-        Transaction fromTransaction = saveAndGetTransaction(TRANSFER, SUCCESS, fromAccount, amount);
-        Transaction toTransaction = saveAndGetTransaction(TRANSFER, SUCCESS, toAccount, amount);
+        Transaction fromTransaction = saveAndGetTransaction(TRANSFER, SUCCESS, fromAccount, amount, methodType);
+        Transaction toTransaction = saveAndGetTransaction(TRANSFER, SUCCESS, toAccount, amount, methodType);
 
         return TransferResponseRecord.from(fromTransaction, toTransaction);
     }
 
-    public void saveFailedTransferTransaction(String fromAccountNumber, String toAccountNumber, Long amount) {
-        Account fromAccount = accountRepository.findByAccountNumber(fromAccountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
-        Account toAccount = accountRepository.findByAccountNumber(toAccountNumber)
-                .orElseThrow(() -> new AccountException(ACCOUNT_NOT_FOUND));
-        saveAndGetTransaction(TRANSFER, FAIL, fromAccount, amount);
-        saveAndGetTransaction(TRANSFER, FAIL, toAccount, amount);
+    public void saveFailedTransferTransaction(String fromAccountNumber, String toAccountNumber, Long amount, TransactionMethodType methodType) {
+        Account fromAccount = accountService.getAccountByNumber(fromAccountNumber);
+        Account toAccount = accountService.getAccountByNumber(toAccountNumber);
+
+        saveAndGetTransaction(TRANSFER, FAIL, fromAccount, amount, methodType);
+        saveAndGetTransaction(TRANSFER, FAIL, toAccount, amount, methodType);
     }
 
     private void validateTransfer(User user, Account from, Account to, Long amount) {
@@ -278,9 +285,20 @@ public class TransactionService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public boolean existsByAccountAndTransactionMethodType(Account account) {
-        return transactionRepository.existsByAccountAndTransactionMethodType(account, TransactionMethodType.AUTO);
+    private void validateDeposit(User user, Account account, Long amount) {
+        if (!Objects.equals(user.getId(), account.getUser().getId())) {
+            throw new AccountException(USER_ACCOUNT_UNMATCH);
+        }
+        if (account.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new AccountException(ACCOUNT_ALREADY_UNREGISTERED);
+        }
+        if (amount > MAX_DEPOSIT_AMOUNT) {
+            throw new AccountException(AMOUNT_EXCEED_DEPOSIT_LIMIT);
+        }
+    }
+
+    public boolean existsByAccountAndTransactionMethodType(Account account, TransactionMethodType auto) {
+        return transactionRepository.existsByAccountAndTransactionMethodType(account, auto);
     }
 
 }
